@@ -58,10 +58,17 @@ export const users = pgTable('users', {
     ),
 ]);
 
+export const sessions = pgTable('sessions', {
+    token_hash: text('token').primaryKey(),
+    userId: uuid('user_id').primaryKey(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
 export const condominiums = pgTable('condominiums', {
     condominiumId: uuid('condominium_id').primaryKey().$defaultFn(() => uuidv7()),
     shortCode: char('short_code', { length: 6 }).notNull().unique(),
-    userId: uuid('user_id').notNull(), // Creator/Owner reference if needed
+    userId: uuid('user_id').notNull(),
     name: varchar('name').notNull(),
     addressLine: varchar('address_line').notNull(),
     city: varchar('city').notNull(),
