@@ -15,3 +15,13 @@ export const CreateCondominiumRequest = z.object({
 
 export const UpdateCondominiumRequest = CreateCondominiumRequest.partial()
     .refine((data) => Object.keys(data).length > 0, "At least one field is required");
+export const CondominiumUnitParams = z.object({
+    id: z.uuid(),
+    unitId: z.uuid(),
+});
+
+export const CreateCondominiumUnitRequest = z.object({
+    name: z.string().trim().min(1, "Name is required"),
+});
+
+export const UpdateCondominiumUnitRequest = CreateCondominiumUnitRequest;

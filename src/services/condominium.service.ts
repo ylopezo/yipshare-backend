@@ -1,11 +1,11 @@
 import {db} from "@/db/db.ts";
 import {condominiums, condominiumUnits} from "@/db/schema.ts";
-import {eq, ne} from "drizzle-orm";
+import {and, eq, ne} from "drizzle-orm";
 import {randomBytes} from "node:crypto";
 import {ConflictError, ForbiddenError, NotFoundError} from "@/utils/errors";
 import {isGlobalAdmin} from "@/services/role.service.ts";
 import * as z from "zod";
-import {CreateCondominiumRequest, UpdateCondominiumRequest} from "@/schema/condominium.schema.ts";
+import {CreateCondominiumRequest, CreateCondominiumUnitRequest, UpdateCondominiumRequest} from "@/schema/condominium.schema.ts";
 
 export const getCondominiums = async () => {
     return db.select().from(condominiums).where(ne(condominiums.digitalState, 'deleted'));
@@ -84,4 +84,57 @@ export const approveCondominium = async (id: string, userId: string) => {
         .returning();
 
     return condominium;
+}
+
+export const getUnitById = async (condominiumId: string, unitId: string) => {
+    await getCondominiumById(condominiumId);
+    const [unit] = await db
+        .select()
+        .from(condominiumUnits)
+        .where(and(eq(condominiumUnits.condominiumId, condominiumId), eq(condominiumUnits.condominiumUnitId, unitId)))
+        .limit(1);
+
+    if (!unit) throw new NotFoundError("Unit not found");
+
+    return unit;
+}
+
+type CondominiumUnitData = z.infer<typeof CreateCondominiumUnitRequest>;
+
+export const createUnit = async (condominiumId: string, data: CondominiumUnitData, userId: string) => {
+    if (!(await isGlobalAdmin(userId))) throw new ForbiddenError("Only global admins can create units");
+    await getCondominiumById(condominiumId);
+
+    const [unit] = await db
+        .insert(condominiumUnits)
+        .values({...data, condominiumId})
+        .returning();
+
+    return unit;
+}
+
+export const updateUnit = async (condominiumId: string, unitId: string, data: CondominiumUnitData, userId: string) => {
+    if (!(await isGlobalAdmin(userId))) throw new ForbiddenError("Only global admins can update units");
+    await getUnitById(condominiumId, unitId);
+
+    const [unit] = await db
+        .update(condominiumUnits)
+        .set(data)
+        .where(eq(condominiumUnits.condominiumUnitId, unitId))
+        .returning();
+
+    return unit;
+}
+
+export const deleteUnit = async (condominiumId: string, unitId: string, userId: string) => {
+    if (!(await isGlobalAdmin(userId))) throw new ForbiddenError("Only global admins can delete units");
+    await getUnitById(condominiumId, unitId);
+
+    try {
+        await db.delete(condominiumUnits).where(eq(condominiumUnits.condominiumUnitId, unitId));
+    } catch (error: any) {
+        // 23503 = FK violation: unit still has members or pending requests
+        if ((error?.cause?.code ?? error?.code) === '23503') throw new ConflictError("Unit has members assigned");
+        throw error;
+    }
 }
