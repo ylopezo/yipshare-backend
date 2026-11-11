@@ -2,6 +2,7 @@ import {type Request,type Response,type NextFunction} from 'express';
 import {LoginRequest, RegisterRequest} from "../schema/auth.schema.ts";
 import {loginService, logoutService, registerService} from "@/services/auth.service.ts";
 import type {AuthenticatedRequest} from "@/middlewares/authentication.middleware.ts";
+import type {AuthorizedRequest} from "@/middlewares/authorization.middleware.ts";
 
 export const login = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -43,6 +44,16 @@ export const logout = async (req: AuthenticatedRequest, res: Response, next: Nex
     try {
         await logoutService(req.session.tokenHash);
         res.status(204).end();
+    } catch (e) {
+        next(e)
+    }
+}
+
+export const testPerm = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
+    try {
+        res.status(200).json({
+            message: '🥹🥹🥹🥹🥹🥹🥹🥹'
+        });
     } catch (e) {
         next(e)
     }

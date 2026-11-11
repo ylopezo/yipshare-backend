@@ -15,6 +15,7 @@ export interface UserSession {
 
 export interface AuthenticatedRequest extends Request {
     session: UserSession;
+    condominiumId?: string | null;
 }
 interface SessionPayload extends JWTPayload {
     sessionToken: string;

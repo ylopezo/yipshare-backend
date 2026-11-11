@@ -24,18 +24,17 @@ export const articleAvailabilityEnum = pgEnum('article_availability', ['availabl
 export const loanStateEnum = pgEnum('loan_state', ['accepted', 'pending']);
 
 export const roles = pgTable('roles', {
-    roleId: uuid('role_id').primaryKey(),
+    roleId: uuid('role_id').primaryKey().$defaultFn(() => uuidv7()),
     name: varchar('name').notNull().unique(),
 });
 
 export const permissions = pgTable('permissions', {
-    permissionId: uuid('permission_id').primaryKey(),
+    permissionId: uuid('permission_id').primaryKey().$defaultFn(() => uuidv7()),
     name: varchar('name').notNull().unique(),
-    constraintSchema: jsonb('constraint_schema').notNull(),
 });
 
 export const categories = pgTable('categories', {
-    categoryId: uuid('category_id').primaryKey(),
+    categoryId: uuid('category_id').primaryKey().$defaultFn(() => uuidv7()),
     name: varchar('name').notNull(),
 });
 
@@ -206,7 +205,7 @@ export const rolePermissions = pgTable('role_permissions', {
     permissionId: uuid('permission_id')
         .notNull()
         .references(() => permissions.permissionId),
-    constraints: jsonb('constraints').notNull(),
+    allowed: boolean().notNull(),
 }, (table) => [
     primaryKey({ columns: [table.roleId, table.permissionId] })
 ]);
@@ -220,7 +219,7 @@ export const permissionOverrides = pgTable('permission_overrides', {
     permissionId: uuid('permission_id')
         .notNull()
         .references(() => permissions.permissionId),
-    constraints: jsonb('constraints').notNull(),
+    allowed: boolean().notNull(),
 }, (table) => [
     unique('uq_user_condominium_permission_permission_overrides')
         .on(table.userId, table.condominiumId, table.permissionId)
