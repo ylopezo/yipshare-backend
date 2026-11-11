@@ -24,18 +24,17 @@ export const articleAvailabilityEnum = pgEnum('article_availability', ['availabl
 export const loanStateEnum = pgEnum('loan_state', ['accepted', 'pending']);
 
 export const roles = pgTable('roles', {
-    roleId: uuid('role_id').primaryKey(),
+    roleId: uuid('role_id').primaryKey().$defaultFn(() => uuidv7()),
     name: varchar('name').notNull().unique(),
 });
 
 export const permissions = pgTable('permissions', {
-    permissionId: uuid('permission_id').primaryKey(),
+    permissionId: uuid('permission_id').primaryKey().$defaultFn(() => uuidv7()),
     name: varchar('name').notNull().unique(),
-    constraintSchema: jsonb('constraint_schema').notNull(),
 });
 
 export const categories = pgTable('categories', {
-    categoryId: uuid('category_id').primaryKey(),
+    categoryId: uuid('category_id').primaryKey().$defaultFn(() => uuidv7()),
     name: varchar('name').notNull(),
 });
 
@@ -49,8 +48,8 @@ export const users = pgTable('users', {
     name: varchar('name'),
     phoneNumber: varchar('phone_number'),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
-    computedRating: smallint('computed_rating').notNull(),
-    state: userStateEnum('state').notNull(),
+    computedRating: smallint('computed_rating').notNull().default(0),
+    state: userStateEnum('state').notNull().default("active"),
 }, (table) => [
     check(
         'chk_active_user_data',
@@ -59,7 +58,7 @@ export const users = pgTable('users', {
 ]);
 
 export const sessions = pgTable('sessions', {
-    token_hash: text('token').primaryKey(),
+    tokenHash: text('token').primaryKey(),
     userId: uuid('user_id').notNull().references(() => users.userId),
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
@@ -208,7 +207,7 @@ export const rolePermissions = pgTable('role_permissions', {
     permissionId: uuid('permission_id')
         .notNull()
         .references(() => permissions.permissionId),
-    constraints: jsonb('constraints').notNull(),
+    allowed: boolean().notNull(),
 }, (table) => [
     primaryKey({ columns: [table.roleId, table.permissionId] })
 ]);
@@ -222,7 +221,7 @@ export const permissionOverrides = pgTable('permission_overrides', {
     permissionId: uuid('permission_id')
         .notNull()
         .references(() => permissions.permissionId),
-    constraints: jsonb('constraints').notNull(),
+    allowed: boolean().notNull(),
 }, (table) => [
     unique('uq_user_condominium_permission_permission_overrides')
         .on(table.userId, table.condominiumId, table.permissionId)

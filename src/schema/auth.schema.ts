@@ -14,6 +14,20 @@ export const LoginRequest = z.object({
 })
 
 export const RegisterRequest = z.object({
+    name: z
+        .string()
+        .max(255, { message: 'Name cannot exceed 255 characters' })
+        .regex(/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/),
+    paternalSurname: z
+        .string()
+        .max(255, { message: 'Name cannot exceed 255 characters' })
+        .regex(/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/),
+    maternalSurname: z
+        .string()
+        .max(255, { message: 'Name cannot exceed 255 characters' })
+        .regex(/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/),
+    email: z.email(),
+    phoneNumber: z.e164(),
     username: z
         .string()
         .min(3, { message: 'Username must be at least 3 characters' })
@@ -23,5 +37,8 @@ export const RegisterRequest = z.object({
         .min(8, { message: 'Password must be at least 8 characters' })
         .max(255, { message: 'Password cannot exceed 255 characters' })
         .regex(/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_])[!-~]{8,255}$/)
-    ,
+})
+
+export const LogoutRequest = z.object({
+
 })

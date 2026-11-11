@@ -1,3 +1,4 @@
+### Attempt Login
 POST localhost:3000/auth/login
 Content-Type: application/json
 
@@ -5,3 +6,29 @@ Content-Type: application/json
  "username": "test",
  "password" : "Test1235@"
 }
+
+> {%
+    client.global.set("auth_token", response.body.token);
+%}
+
+### Attempt Register
+POST localhost:3000/auth/register
+Content-Type: application/json
+
+{
+  "name": "Jose",
+  "paternalSurname": "Hernandez",
+  "maternalSurname": "Perez",
+  "email": "jose123@gmail.com",
+  "phoneNumber": "+525511153706",
+  "username": "test",
+  "password" : "Test1235@"
+}
+
+> {%
+    client.global.set("auth_token", response.body.token);
+%}
+
+### Attempt Logout
+POST localhost:3000/auth/logout
+Authorization: Bearer {{auth_token}}
