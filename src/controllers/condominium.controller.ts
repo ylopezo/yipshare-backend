@@ -1,5 +1,5 @@
 import {type Request, type Response, type NextFunction} from "express";
-import {getCondominiums, getCondominiumById, getUnitsByCondominium, createCondominium, updateCondominium, deleteCondominium} from "@/services/condominium.service.ts";
+import {getCondominiums, getCondominiumById, getUnitsByCondominium, createCondominium, updateCondominium, deleteCondominium, approveCondominium} from "@/services/condominium.service.ts";
 import {CondominiumIdParams, CreateCondominiumRequest, UpdateCondominiumRequest} from "@/schema/condominium.schema.ts";
 import {UnauthorizedError} from "@/utils/errors";
 
@@ -62,6 +62,18 @@ export const removeCondominium = async (req: Request, res: Response, next: NextF
         const {id} = CondominiumIdParams.parse(req.params);
         await deleteCondominium(id, userId);
         return res.status(204).end();
+    } catch (error) {
+        next(error);
+    }
+}
+
+export const approveCondominiumHandler = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const userId = res.locals.userId;
+        if (!userId) throw new UnauthorizedError("User not authenticated");
+        const {id} = CondominiumIdParams.parse(req.params);
+        const condominium = await approveCondominium(id, userId);
+        return res.status(200).json(condominium);
     } catch (error) {
         next(error);
     }

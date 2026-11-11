@@ -2,7 +2,7 @@ import {db} from "@/db/db.ts";
 import {condominiums, condominiumUnits} from "@/db/schema.ts";
 import {eq, ne} from "drizzle-orm";
 import {randomBytes} from "node:crypto";
-import {ForbiddenError, NotFoundError} from "@/utils/errors";
+import {ConflictError, ForbiddenError, NotFoundError} from "@/utils/errors";
 import {isGlobalAdmin} from "@/services/role.service.ts";
 import * as z from "zod";
 import {CreateCondominiumRequest, UpdateCondominiumRequest} from "@/schema/condominium.schema.ts";
@@ -70,4 +70,18 @@ export const deleteCondominium = async (id: string, userId: string) => {
         .update(condominiums)
         .set({digitalState: 'deleted'})
         .where(eq(condominiums.condominiumId, id));
+}
+
+export const approveCondominium = async (id: string, userId: string) => {
+    if (!(await isGlobalAdmin(userId))) throw new ForbiddenError("Only global admins can approve condominiums");
+    const existing = await getCondominiumById(id);
+    if (existing.digitalState !== 'pending') throw new ConflictError("Condominium is not pending");
+
+    const [condominium] = await db
+        .update(condominiums)
+        .set({digitalState: 'approved', approvedAt: new Date(), approvedBy: userId})
+        .where(eq(condominiums.condominiumId, id))
+        .returning();
+
+    return condominium;
 }
