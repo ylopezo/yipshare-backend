@@ -1,7 +1,10 @@
 export const ALL_PERMS = [
     'condominium:create',
+    'condominium:create.units',
     'condominium:update',
+    'condominium:update.units',
     'condominium:delete',
+    'condominium:delete.units',
     'condominium:read',
     'condominium:read.all',
     'condominium:read.units',
