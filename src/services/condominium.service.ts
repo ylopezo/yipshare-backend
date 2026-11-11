@@ -1,13 +1,14 @@
 import {db} from "@/db/db.ts";
 import {condominiums, condominiumUnits} from "@/db/schema.ts";
-import {eq} from "drizzle-orm";
+import {eq, ne} from "drizzle-orm";
 import {randomBytes} from "node:crypto";
-import {NotFoundError} from "@/utils/errors";
+import {ForbiddenError, NotFoundError} from "@/utils/errors";
+import {isGlobalAdmin} from "@/services/role.service.ts";
 import * as z from "zod";
-import {CreateCondominiumRequest} from "@/schema/condominium.schema.ts";
+import {CreateCondominiumRequest, UpdateCondominiumRequest} from "@/schema/condominium.schema.ts";
 
 export const getCondominiums = async () => {
-    return db.select().from(condominiums);
+    return db.select().from(condominiums).where(ne(condominiums.digitalState, 'deleted'));
 }
 
 export const getCondominiumById = async (id: string) => {
@@ -17,7 +18,7 @@ export const getCondominiumById = async (id: string) => {
         .where(eq(condominiums.condominiumId, id))
         .limit(1);
 
-    if (!condominium) throw new NotFoundError("Condominium not found");
+    if (!condominium || condominium.digitalState === 'deleted') throw new NotFoundError("Condominium not found");
 
     return condominium;
 }
@@ -44,4 +45,29 @@ export const createCondominium = async (data: CreateCondominiumData, userId: str
         .returning();
 
     return condominium;
+}
+
+type UpdateCondominiumData = z.infer<typeof UpdateCondominiumRequest>;
+
+export const updateCondominium = async (id: string, data: UpdateCondominiumData, userId: string) => {
+    if (!(await isGlobalAdmin(userId))) throw new ForbiddenError("Only global admins can update condominiums");
+    await getCondominiumById(id);
+
+    const [condominium] = await db
+        .update(condominiums)
+        .set(data)
+        .where(eq(condominiums.condominiumId, id))
+        .returning();
+
+    return condominium;
+}
+
+export const deleteCondominium = async (id: string, userId: string) => {
+    if (!(await isGlobalAdmin(userId))) throw new ForbiddenError("Only global admins can delete condominiums");
+    await getCondominiumById(id);
+
+    await db
+        .update(condominiums)
+        .set({digitalState: 'deleted'})
+        .where(eq(condominiums.condominiumId, id));
 }

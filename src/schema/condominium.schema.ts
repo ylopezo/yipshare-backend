@@ -13,4 +13,5 @@ export const CreateCondominiumRequest = z.object({
     state: z.string().trim().min(1, "State is required"),
 });
 
-export const UpdateCondominiumRequest = CreateCondominiumRequest.partial();
+export const UpdateCondominiumRequest = CreateCondominiumRequest.partial()
+    .refine((data) => Object.keys(data).length > 0, "At least one field is required");
