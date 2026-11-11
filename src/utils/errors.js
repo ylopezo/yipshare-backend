@@ -19,3 +19,15 @@ export class UnauthorizedError extends AppError {
         super(message, 401);
     }
 }
+
+export class ConflictError extends AppError {
+    constructor(message = "Conflict") {
+        super(message, 409);
+    }
+}
+
+export class InternalServerError extends AppError {
+    constructor(message = "Internal Server Error") {
+        super(message, 500);
+    }
+}

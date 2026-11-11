@@ -49,8 +49,8 @@ export const users = pgTable('users', {
     name: varchar('name'),
     phoneNumber: varchar('phone_number'),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
-    computedRating: smallint('computed_rating').notNull(),
-    state: userStateEnum('state').notNull(),
+    computedRating: smallint('computed_rating').notNull().default(0),
+    state: userStateEnum('state').notNull().default("active"),
 }, (table) => [
     check(
         'chk_active_user_data',
@@ -59,7 +59,7 @@ export const users = pgTable('users', {
 ]);
 
 export const sessions = pgTable('sessions', {
-    token_hash: text('token').primaryKey(),
+    tokenHash: text('token').primaryKey(),
     userId: uuid('user_id').notNull().references(() => users.userId),
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
