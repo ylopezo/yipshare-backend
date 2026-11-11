@@ -1,5 +1,5 @@
 import {type Request, type Response, type NextFunction} from "express";
-import {getCondominiums, getCondominiumById} from "@/services/condominium.service.ts";
+import {getCondominiums, getCondominiumById, getUnitsByCondominium} from "@/services/condominium.service.ts";
 import {CondominiumIdParams} from "@/schema/condominium.schema.ts";
 
 export const getListOfCondominiums = async (req: Request, res: Response, next: NextFunction) => {
@@ -15,6 +15,15 @@ export const getCondominium = async (req: Request, res: Response, next: NextFunc
         const {id} = CondominiumIdParams.parse(req.params);
         const condominium = await getCondominiumById(id);
         return res.status(200).json(condominium);
+    } catch (error) {
+        next(error);
+    }
+}
+export const getCondominiumUnits = async (req: Request, res: Response, next: NextFunction) => {
+    try{
+        const {id} = CondominiumIdParams.parse(req.params);
+        const units = await getUnitsByCondominium(id);
+        return res.status(200).json(units);
     } catch (error) {
         next(error);
     }
