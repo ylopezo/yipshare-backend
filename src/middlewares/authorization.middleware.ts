@@ -9,8 +9,8 @@ export interface AuthorizedRequest extends AuthenticatedRequest {
     permissions: Set<string>;
 }
 
-export const withAuthz = (
-    handler: (req: AuthorizedRequest, res: Response, next: NextFunction) => Promise<void> | void
+export const withAuthz = <T>(
+    handler: (req: AuthorizedRequest, res: Response, next: NextFunction) => Promise<T> | T
 ): RequestHandler => {
     return (req, res, next) => {
         Promise.resolve(handler(req as AuthorizedRequest, res, next)).catch(next);

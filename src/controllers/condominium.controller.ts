@@ -2,8 +2,9 @@ import {type Request, type Response, type NextFunction} from "express";
 import {getCondominiums, getCondominiumById, getUnitsByCondominium, createCondominium, updateCondominium, deleteCondominium, approveCondominium} from "@/services/condominium.service.ts";
 import {CondominiumIdParams, CreateCondominiumRequest, UpdateCondominiumRequest} from "@/schema/condominium.schema.ts";
 import {UnauthorizedError} from "@/utils/errors";
+import type {AuthorizedRequest} from "@/middlewares/authorization.middleware.ts";
 
-export const getListOfCondominiums = async (req: Request, res: Response, next: NextFunction) => {
+export const getListOfCondominiums = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
         const condominiums = await getCondominiums();
         return res.status(200).json(condominiums);
@@ -11,7 +12,7 @@ export const getListOfCondominiums = async (req: Request, res: Response, next: N
         next(error);
     }
 }
-export const getCondominium = async (req: Request, res: Response, next: NextFunction) => {
+export const getCondominium = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try{
         const {id} = CondominiumIdParams.parse(req.params);
         const condominium = await getCondominiumById(id);
@@ -20,7 +21,7 @@ export const getCondominium = async (req: Request, res: Response, next: NextFunc
         next(error);
     }
 }
-export const getCondominiumUnits = async (req: Request, res: Response, next: NextFunction) => {
+export const getCondominiumUnits = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try{
         const {id} = CondominiumIdParams.parse(req.params);
         const units = await getUnitsByCondominium(id);
@@ -30,7 +31,7 @@ export const getCondominiumUnits = async (req: Request, res: Response, next: Nex
     }
 }
 
-export const postCondominium = async (req: Request, res: Response, next: NextFunction) => {
+export const postCondominium = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
         const userId = res.locals.userId;
         if (!userId) throw new UnauthorizedError("User not authenticated");
@@ -42,7 +43,7 @@ export const postCondominium = async (req: Request, res: Response, next: NextFun
     }
 }
 
-export const patchCondominium = async (req: Request, res: Response, next: NextFunction) => {
+export const patchCondominium = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
         const userId = res.locals.userId;
         if (!userId) throw new UnauthorizedError("User not authenticated");
@@ -55,7 +56,7 @@ export const patchCondominium = async (req: Request, res: Response, next: NextFu
     }
 }
 
-export const removeCondominium = async (req: Request, res: Response, next: NextFunction) => {
+export const removeCondominium = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
         const userId = res.locals.userId;
         if (!userId) throw new UnauthorizedError("User not authenticated");
@@ -67,7 +68,7 @@ export const removeCondominium = async (req: Request, res: Response, next: NextF
     }
 }
 
-export const approveCondominiumHandler = async (req: Request, res: Response, next: NextFunction) => {
+export const approveCondominiumHandler = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
         const userId = res.locals.userId;
         if (!userId) throw new UnauthorizedError("User not authenticated");
