@@ -11,7 +11,7 @@ const SESSION_DURATION_MS = 30 * 24 * 60 * 60 * 1000;
 
 export const loginService = async (username: string, password: string) => {
     const [user] = await db.select().from(users).where(eq(users.username, username)).limit(1);
-    if (!user || !user.passwordHash) throw new NotFoundError()
+    if (!user || !user.passwordHash) throw new NotFoundError('User Not Found');
 
     if (!(await argon2.verify(user.passwordHash, password))) throw new UnauthorizedError()
 
