@@ -254,7 +254,6 @@ export const pendingCondominiumMembers = pgTable('pending_condominium_members', 
         .references(() => condominiums.condominiumId),
     unit: varchar('unit', { length: 255 }).notNull(),
     suggestedUnitId: uuid('suggested_unit_id')
-        .notNull()
         .references(() => condominiumUnits.condominiumUnitId),
 }, (table) => [
     primaryKey({ columns: [table.userId, table.condominiumId] }),

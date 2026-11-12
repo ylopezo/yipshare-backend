@@ -1,13 +1,21 @@
 import {db} from "@/db/db.ts";
 import {condominiumMembers, condominiums, condominiumUnits, pendingCondominiumMembers, roles, userRoles, users} from "@/db/schema.ts";
-import {and, eq, ne} from "drizzle-orm";
+import {and, eq, getTableColumns, ne, sql} from "drizzle-orm";
 import {randomBytes} from "node:crypto";
 import {ConflictError, NotFoundError} from "@/utils/errors";
 import * as z from "zod";
 import {CreateCondominiumRequest, CreateCondominiumUnitRequest, JoinCondominiumRequest, UpdateCondominiumRequest} from "@/schema/condominium.schema.ts";
 
 export const getCondominiums = async () => {
-    return db.select().from(condominiums).where(ne(condominiums.digitalState, 'deleted'));
+    return db
+        .select({
+            ...getTableColumns(condominiums),
+            adminUsername: users.username,
+            unitCount: sql<number>`(SELECT count(*)::int FROM ${condominiumUnits} WHERE ${condominiumUnits.condominiumId} = ${condominiums.condominiumId})`,
+        })
+        .from(condominiums)
+        .leftJoin(users, eq(users.userId, condominiums.userId))
+        .where(ne(condominiums.digitalState, 'deleted'));
 }
 
 export const getCondominiumById = async (id: string) => {
@@ -157,7 +165,7 @@ export const requestJoin = async (userId: string, {code, unit, unitId}: JoinCond
     if (!condominium || condominium.digitalState !== 'approved') throw new NotFoundError("Invalid code");
     const condominiumId = condominium.condominiumId;
 
-    await getUnitById(condominiumId, unitId);
+    if (unitId) await getUnitById(condominiumId, unitId);
 
     const [member] = await db
         .select()
@@ -168,7 +176,7 @@ export const requestJoin = async (userId: string, {code, unit, unitId}: JoinCond
 
     const [pending] = await db
         .insert(pendingCondominiumMembers)
-        .values({userId, condominiumId, unit, suggestedUnitId: unitId})
+        .values({userId, condominiumId, unit, suggestedUnitId: unitId ?? null})
         .onConflictDoNothing()
         .returning();
     if (!pending) throw new ConflictError("Request already pending");
@@ -220,11 +228,10 @@ export const approveMember = async (condominiumId: string, userId: string, unitI
             .returning();
         if (!pending) throw new NotFoundError("Join request not found");
 
-        await tx.insert(condominiumMembers).values({
-            userId,
-            condominiumId,
-            condominiumUnitId: unitId ?? pending.suggestedUnitId,
-        });
+        const condominiumUnitId = unitId ?? pending.suggestedUnitId;
+        if (!condominiumUnitId) throw new ConflictError("A unit is required to approve this member");
+
+        await tx.insert(condominiumMembers).values({userId, condominiumId, condominiumUnitId});
         await tx
             .insert(userRoles)
             .values({userId, condominiumId, roleId: residentRoleId, isGlobal: false})

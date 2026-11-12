@@ -34,7 +34,7 @@ router.post('/:id/units', authenticationHandler, getIdFromParams('id'), withPerm
 router.get('/:id/units/:unitId', authenticationHandler, getIdFromParams('id'), withPermissions('condominium:read.units') ,withAuthz(getCondominiumUnit));
 router.patch('/:id/units/:unitId', authenticationHandler, getIdFromParams('id'), withPermissions('condominium:update.units') ,withAuthz(patchCondominiumUnit));
 router.delete('/:id/units/:unitId', authenticationHandler, getIdFromParams('id'), withPermissions('condominium:delete.units') ,withAuthz(removeCondominiumUnit));
-router.post('/', authenticationHandler, withPermissions('condominium:create') ,withAuthz(postCondominium));
+router.post('/', authenticationHandler, withAuthz(postCondominium));
 router.patch('/:id', authenticationHandler, getIdFromParams('id'), withPermissions('condominium:update') ,withAuthz(patchCondominium));
 router.post('/:id/approve', authenticationHandler, getIdFromParams('id'), withPermissions('condominium:approve') ,withAuthz(approveCondominiumHandler));
 router.delete('/:id', authenticationHandler, getIdFromParams('id'), withPermissions('condominium:delete') ,withAuthz(removeCondominium));

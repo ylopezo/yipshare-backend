@@ -29,7 +29,7 @@ export const UpdateCondominiumUnitRequest = CreateCondominiumUnitRequest;
 export const JoinCondominiumRequest = z.object({
     code: z.string().trim().length(6, "Code must be 6 characters").transform((s) => s.toUpperCase()),
     unit: z.string().trim().min(1, "Department number is required"),
-    unitId: z.uuid(),
+    unitId: z.uuid().optional(),
 });
 
 export const MemberParams = z.object({
