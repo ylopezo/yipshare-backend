@@ -1,5 +1,5 @@
 import {Router} from "express";
-import {authenticationHandler, withAuth} from "@/middlewares/authentication.middleware.ts";
+import {authenticationHandler} from "@/middlewares/authentication.middleware.ts";
 import {withAuthz, withPermissions} from "@/middlewares/authorization.middleware.ts";
 import {
     createNotification,
@@ -7,7 +7,6 @@ import {
     getNotification,
     getNotifications, readNotification
 } from "@/controllers/notifications.controller.ts";
-import {markNotificationAsRead} from "@/services/notification.service.ts";
 
 const router = Router();
 
