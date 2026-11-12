@@ -152,6 +152,7 @@ export const reports = pgTable('reports', {
     loanId: uuid('loan_id')
         .notNull()
         .references(() => loans.loanId),
+    authorId: uuid('author_id').notNull().references(() => users.userId),
     reportText: text('report_text').notNull(),
     resolvedAt: timestamp('resolved_at', { withTimezone: true }),
     resolvedBy: uuid('resolved_by').references(() => users.userId),
