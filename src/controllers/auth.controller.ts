@@ -1,6 +1,6 @@
 import {type Request,type Response,type NextFunction} from 'express';
 import {LoginRequest, RegisterRequest} from "../schema/auth.schema.ts";
-import {loginService, logoutService, registerService} from "@/services/auth.service.ts";
+import {loginService, logoutService, profileService, registerService} from "@/services/auth.service.ts";
 import type {AuthenticatedRequest} from "@/middlewares/authentication.middleware.ts";
 import type {AuthorizedRequest} from "@/middlewares/authorization.middleware.ts";
 
@@ -54,6 +54,14 @@ export const testPerm = async (req: AuthorizedRequest, res: Response, next: Next
         res.status(200).json({
             message: '🥹🥹🥹🥹🥹🥹🥹🥹'
         });
+    } catch (e) {
+        next(e)
+    }
+}
+
+export const me = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+        res.status(200).json(await profileService(req.session.userId));
     } catch (e) {
         next(e)
     }

@@ -1,5 +1,5 @@
-import {sessions, users} from "@/db/schema.ts";
-import {eq} from "drizzle-orm";
+import {sessions, userRoles, users} from "@/db/schema.ts";
+import {and, eq} from "drizzle-orm";
 import {ConflictError, InternalServerError, NotFoundError, UnauthorizedError} from "@/utils/errors.js";
 import * as argon2 from 'argon2';
 import {getJwtSecret} from "@/config/jwt.ts";
@@ -79,4 +79,21 @@ export const registerService = async (name: string,
 
 export const logoutService = async (sessionHash: string) => {
     await db.delete(sessions).where(eq(sessions.tokenHash, sessionHash));
+}
+
+export const profileService = async (userId: string) => {
+    const [user] = await db
+        .select({userId: users.userId, username: users.username, name: users.name})
+        .from(users)
+        .where(eq(users.userId, userId))
+        .limit(1);
+    if (!user) throw new NotFoundError('User Not Found');
+
+    const [globalRole] = await db
+        .select({roleId: userRoles.roleId})
+        .from(userRoles)
+        .where(and(eq(userRoles.userId, userId), eq(userRoles.isGlobal, true)))
+        .limit(1);
+
+    return {...user, isGlobalAdmin: Boolean(globalRole)};
 }
