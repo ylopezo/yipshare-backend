@@ -1,0 +1,260 @@
+
+@loanId = LOAN_ID
+
+### Registrar vecino1
+POST localhost:3000/auth/register
+Content-Type: application/json
+
+{
+  "name": "Ana",
+  "paternalSurname": "Lopez",
+  "maternalSurname": "Ruiz",
+  "email": "vecino1@test.com",
+  "phoneNumber": "+525500000001",
+  "username": "vecino1",
+  "password": "Vecino123@"
+}
+
+### Registrar vecino2
+POST localhost:3000/auth/register
+Content-Type: application/json
+
+{
+  "name": "Luis",
+  "paternalSurname": "Garcia",
+  "maternalSurname": "Diaz",
+  "email": "vecino2@test.com",
+  "phoneNumber": "+525500000002",
+  "username": "vecino2",
+  "password": "Vecino123@"
+}
+
+### Registrar vecino3
+POST localhost:3000/auth/register
+Content-Type: application/json
+
+{
+  "name": "Sara",
+  "paternalSurname": "Mora",
+  "maternalSurname": "Vega",
+  "email": "vecino3@test.com",
+  "phoneNumber": "+525500000003",
+  "username": "vecino3",
+  "password": "Vecino123@"
+}
+
+### Login vecino1
+POST localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "username": "vecino1",
+  "password": "Vecino123@"
+}
+
+> {%
+    client.global.set("v1_token", response.body.token);
+%}
+
+### Login vecino2
+POST localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "username": "vecino2",
+  "password": "Vecino123@"
+}
+
+> {%
+    client.global.set("v2_token", response.body.token);
+%}
+
+### Login vecino3
+POST localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "username": "vecino3",
+  "password": "Vecino123@"
+}
+
+> {%
+    client.global.set("v3_token", response.body.token);
+%}
+
+### Login superadmin
+POST localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "username": "superadmin",
+  "password": "Admin@1234"
+}
+
+> {%
+    client.global.set("super_token", response.body.token);
+%}
+
+### Login admin del condominio
+POST localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "Admin@1234"
+}
+
+> {%
+    client.global.set("admin_token", response.body.token);
+%}
+
+### Crear condominio (admin queda como condominium_admin) -> 201
+POST localhost:3000/condominiums
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "name": "Torres del Valle",
+  "street": "Av. Insurgentes Sur 123",
+  "neighborhood": "Del Valle",
+  "postalCode": "03100",
+  "municipality": "Benito Juarez",
+  "city": "CDMX",
+  "state": "CDMX"
+}
+
+> {%
+    client.global.set("condominiumId", response.body.condominiumId);
+%}
+
+### vecino1 reporta a vecino2 -> 201
+POST localhost:3000/reports
+Authorization: Bearer {{v1_token}}
+Content-Type: application/json
+
+{
+  "loanId": "{{loanId}}",
+  "text": "No devolvió el taladro",
+  "image": "https://example.com/evidencia.jpg"
+}
+
+### Texto vacío -> 400
+POST localhost:3000/reports
+Authorization: Bearer {{v1_token}}
+Content-Type: application/json
+
+{
+  "loanId": "{{loanId}}",
+  "text": "   "
+}
+
+### Préstamo inexistente -> 404
+POST localhost:3000/reports
+Authorization: Bearer {{v1_token}}
+Content-Type: application/json
+
+{
+  "loanId": "00000000-0000-0000-0000-000000000000",
+  "text": "No existe"
+}
+
+### vecino3 reporta un préstamo ajeno -> 403
+POST localhost:3000/reports
+Authorization: Bearer {{v3_token}}
+Content-Type: application/json
+
+{
+  "loanId": "{{loanId}}",
+  "text": "Me meto donde no"
+}
+
+### vecino2 ve el reporte sobre él -> [ { text, resolved: false } ]
+GET localhost:3000/reports/me
+Authorization: Bearer {{v2_token}}
+
+### vecino1 es el autor -> []
+GET localhost:3000/reports/me
+Authorization: Bearer {{v1_token}}
+
+### vecino3 no participó -> []
+GET localhost:3000/reports/me
+Authorization: Bearer {{v3_token}}
+
+### superadmin no ve reportes de vecinos -> []
+GET localhost:3000/reports/me
+Authorization: Bearer {{super_token}}
+
+### Admin ve los reportes del condominio -> 200 [ { reportedBy: vecino1, reported: vecino2, state: pending } ]
+GET localhost:3000/condominiums/{{condominiumId}}/reports
+Authorization: Bearer {{admin_token}}
+
+> {%
+    client.global.set("reportId", response.body[0].id);
+%}
+
+### vecino2 no puede ver los reportes del condominio -> 403
+GET localhost:3000/condominiums/{{condominiumId}}/reports
+Authorization: Bearer {{v2_token}}
+
+### superadmin no puede ver los reportes del condominio -> 403
+GET localhost:3000/condominiums/{{condominiumId}}/reports
+Authorization: Bearer {{super_token}}
+
+### Admin pasa el reporte a en revisión -> 200
+PATCH localhost:3000/condominiums/{{condominiumId}}/reports/{{reportId}}
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "state": "in_review"
+}
+
+### Admin intenta cambiar el texto -> 400
+PATCH localhost:3000/condominiums/{{condominiumId}}/reports/{{reportId}}
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "state": "in_review",
+  "text": "Texto cambiado por el admin"
+}
+
+### Estado inválido -> 400
+PATCH localhost:3000/condominiums/{{condominiumId}}/reports/{{reportId}}
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "state": "cerrado"
+}
+
+### vecino1 no puede cambiar el estado -> 403
+PATCH localhost:3000/condominiums/{{condominiumId}}/reports/{{reportId}}
+Authorization: Bearer {{v1_token}}
+Content-Type: application/json
+
+{
+  "state": "resolved"
+}
+
+### Reporte inexistente -> 404
+PATCH localhost:3000/condominiums/{{condominiumId}}/reports/00000000-0000-0000-0000-000000000000
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "state": "resolved"
+}
+
+### Admin finaliza el reporte -> 200 con resolvedAt y resolvedBy
+PATCH localhost:3000/condominiums/{{condominiumId}}/reports/{{reportId}}
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "state": "resolved"
+}
+
+### vecino2 ve su reporte finalizado -> [ { text, resolved: true } ]
+GET localhost:3000/reports/me
+Authorization: Bearer {{v2_token}}

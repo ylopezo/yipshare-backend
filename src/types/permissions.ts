@@ -5,10 +5,13 @@ export const ALL_PERMS = [
     'condominium:update.units',
     'condominium:delete',
     'condominium:delete.units',
+    'condominium:delete.members',
     'condominium:read',
     'condominium:read.all',
     'condominium:read.units',
+    'condominium:read.members',
     'condominium:approve',
+    'condominium:approve.members',
     'users:read',
     'users:read.all',
     'users:read.self',
@@ -22,6 +25,8 @@ export const ALL_PERMS = [
     'notifications:read',
     'notifications:create',
     'notifications:delete',
+    'report:read',
+    'report:update',
     "admin:test",
 ] as const;
 

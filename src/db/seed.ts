@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { db } from "@/db/db.ts";
-import { permissions, roles, rolePermissions, users, userRoles } from "@/db/schema.ts";
+import { categories, permissions, roles, rolePermissions, users, userRoles } from "@/db/schema.ts";
 import { eq } from "drizzle-orm";
 import {ALL_PERMS} from "@/types/permissions.ts";
 import {env} from "@/env.ts";
@@ -21,7 +21,16 @@ async function seed() {
         .values(ALL_PERMS.map((name) => ({ name })))
         .onConflictDoNothing({ target: permissions.name });
 
+    await db
+        .insert(categories)
+        .values([
+            "Herramientas", "Electrodomésticos", "Jardinería", "Cocina",
+            "Limpieza", "Electrónica", "Automotriz", "Otros",
+        ].map((name) => ({ name })))
+        .onConflictDoNothing({ target: categories.name });
+
     const allDbPermissions = await db.select().from(permissions);
+    const globalPermissions = allDbPermissions.filter((perm) => !perm.name.startsWith("report:"));
 
     const [superAdminRole] = await db
         .insert(roles)
@@ -32,11 +41,11 @@ async function seed() {
         })
         .returning();
 
-    if (superAdminRole && allDbPermissions.length > 0) {
+    if (superAdminRole && globalPermissions.length > 0) {
         await db
             .insert(rolePermissions)
             .values(
-                allDbPermissions.map((perm) => ({
+                globalPermissions.map((perm) => ({
                     roleId: superAdminRole.roleId,
                     permissionId: perm.permissionId,
                     allowed: true,
@@ -54,7 +63,7 @@ async function seed() {
         })
         .returning();
 
-    const filteredPermissions = allDbPermissions.filter(
+    const filteredPermissions = globalPermissions.filter(
         (perm) => perm.name !== "admin:test"
     );
 
@@ -64,6 +73,30 @@ async function seed() {
             .values(
                 filteredPermissions.map((perm) => ({
                     roleId: adminRole.roleId,
+                    permissionId: perm.permissionId,
+                    allowed: true,
+                }))
+            )
+            .onConflictDoNothing();
+    }
+
+    const [condominiumAdminRole] = await db
+        .insert(roles)
+        .values({ name: "condominium_admin" })
+        .onConflictDoUpdate({
+            target: roles.name,
+            set: { name: "condominium_admin" },
+        })
+        .returning();
+
+    const reportPermissions = allDbPermissions.filter((perm) => perm.name.startsWith("report:"));
+
+    if (condominiumAdminRole && reportPermissions.length > 0) {
+        await db
+            .insert(rolePermissions)
+            .values(
+                reportPermissions.map((perm) => ({
+                    roleId: condominiumAdminRole.roleId,
                     permissionId: perm.permissionId,
                     allowed: true,
                 }))
@@ -86,7 +119,7 @@ async function seed() {
         })
         .onConflictDoUpdate({
             target: users.email,
-            set: { email: "superadmin@test.com" },
+            set: { email: "superadmin@test.com", passwordHash: hashedPassword },
         })
         .returning();
 
@@ -103,7 +136,7 @@ async function seed() {
         })
         .onConflictDoUpdate({
             target: users.email,
-            set: { email: "admin@test.com" },
+            set: { email: "admin@test.com", passwordHash: hashedPassword },
         })
         .returning();
 

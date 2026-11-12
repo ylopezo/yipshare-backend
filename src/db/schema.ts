@@ -22,6 +22,7 @@ export const condominiumStateEnum = pgEnum('condominium_state', ['approved', 'pe
 export const articleStateEnum = pgEnum('article_state', ['excellent', 'good', 'medium', 'bad']);
 export const articleAvailabilityEnum = pgEnum('article_availability', ['available', 'not_available', 'pending']);
 export const loanStateEnum = pgEnum('loan_state', ['accepted', 'pending']);
+export const reportStateEnum = pgEnum('report_state', ['pending', 'in_review', 'resolved']);
 
 export const roles = pgTable('roles', {
     roleId: uuid('role_id').primaryKey().$defaultFn(() => uuidv7()),
@@ -35,7 +36,7 @@ export const permissions = pgTable('permissions', {
 
 export const categories = pgTable('categories', {
     categoryId: uuid('category_id').primaryKey().$defaultFn(() => uuidv7()),
-    name: varchar('name').notNull(),
+    name: varchar('name').notNull().unique(),
 });
 
 export const users = pgTable('users', {
@@ -117,6 +118,7 @@ export const articles = pgTable('articles', {
     state: articleStateEnum('state').notNull(),
     availability: articleAvailabilityEnum('availability').notNull(),
     maximumLendTime: smallint('maximum_lend_time').notNull(),
+    deletedAt: timestamp('deleted_at', { withTimezone: true }),
 }, (table) => [
     check('chk_positive_lend_time', sql`${table.maximumLendTime} > 0`),
 ]);
@@ -153,7 +155,9 @@ export const reports = pgTable('reports', {
     loanId: uuid('loan_id')
         .notNull()
         .references(() => loans.loanId),
+    authorId: uuid('author_id').notNull().references(() => users.userId),
     reportText: text('report_text').notNull(),
+    state: reportStateEnum('state').notNull().default('pending'),
     resolvedAt: timestamp('resolved_at', { withTimezone: true }),
     resolvedBy: uuid('resolved_by').references(() => users.userId),
 }, (table) => [check(
@@ -180,6 +184,7 @@ export const notifications = pgTable('notifications', {
     image: varchar('image'),
     action: jsonb('action').notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
+    readAt: timestamp('read_at', { withTimezone: true }),
 });
 
 export const userRoles = pgTable('user_roles', {
@@ -253,7 +258,6 @@ export const pendingCondominiumMembers = pgTable('pending_condominium_members', 
         .references(() => condominiums.condominiumId),
     unit: varchar('unit', { length: 255 }).notNull(),
     suggestedUnitId: uuid('suggested_unit_id')
-        .notNull()
         .references(() => condominiumUnits.condominiumUnitId),
 }, (table) => [
     primaryKey({ columns: [table.userId, table.condominiumId] }),
