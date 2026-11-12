@@ -1,7 +1,7 @@
 
 @loanId = LOAN_ID
 
-### Registrar vecino1 (presta) — solo la primera vez
+### Registrar vecino1
 POST localhost:3000/auth/register
 Content-Type: application/json
 
@@ -15,7 +15,7 @@ Content-Type: application/json
   "password": "Vecino123@"
 }
 
-### Registrar vecino2 (pide prestado) — solo la primera vez
+### Registrar vecino2
 POST localhost:3000/auth/register
 Content-Type: application/json
 
@@ -29,7 +29,7 @@ Content-Type: application/json
   "password": "Vecino123@"
 }
 
-### Registrar vecino3 (ajeno al préstamo) — solo la primera vez
+### Registrar vecino3
 POST localhost:3000/auth/register
 Content-Type: application/json
 
@@ -95,6 +95,38 @@ Content-Type: application/json
     client.global.set("super_token", response.body.token);
 %}
 
+### Login admin del condominio
+POST localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "Admin@1234"
+}
+
+> {%
+    client.global.set("admin_token", response.body.token);
+%}
+
+### Crear condominio (admin queda como condominium_admin) -> 201
+POST localhost:3000/condominiums
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "name": "Torres del Valle",
+  "street": "Av. Insurgentes Sur 123",
+  "neighborhood": "Del Valle",
+  "postalCode": "03100",
+  "municipality": "Benito Juarez",
+  "city": "CDMX",
+  "state": "CDMX"
+}
+
+> {%
+    client.global.set("condominiumId", response.body.condominiumId);
+%}
+
 ### vecino1 reporta a vecino2 -> 201
 POST localhost:3000/reports
 Authorization: Bearer {{v1_token}}
@@ -151,3 +183,78 @@ Authorization: Bearer {{v3_token}}
 ### superadmin no ve reportes de vecinos -> []
 GET localhost:3000/reports/me
 Authorization: Bearer {{super_token}}
+
+### Admin ve los reportes del condominio -> 200 [ { reportedBy: vecino1, reported: vecino2, state: pending } ]
+GET localhost:3000/condominiums/{{condominiumId}}/reports
+Authorization: Bearer {{admin_token}}
+
+> {%
+    client.global.set("reportId", response.body[0].id);
+%}
+
+### vecino2 no puede ver los reportes del condominio -> 403
+GET localhost:3000/condominiums/{{condominiumId}}/reports
+Authorization: Bearer {{v2_token}}
+
+### superadmin no puede ver los reportes del condominio -> 403
+GET localhost:3000/condominiums/{{condominiumId}}/reports
+Authorization: Bearer {{super_token}}
+
+### Admin pasa el reporte a en revisión -> 200
+PATCH localhost:3000/condominiums/{{condominiumId}}/reports/{{reportId}}
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "state": "in_review"
+}
+
+### Admin intenta cambiar el texto -> 400
+PATCH localhost:3000/condominiums/{{condominiumId}}/reports/{{reportId}}
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "state": "in_review",
+  "text": "Texto cambiado por el admin"
+}
+
+### Estado inválido -> 400
+PATCH localhost:3000/condominiums/{{condominiumId}}/reports/{{reportId}}
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "state": "cerrado"
+}
+
+### vecino1 no puede cambiar el estado -> 403
+PATCH localhost:3000/condominiums/{{condominiumId}}/reports/{{reportId}}
+Authorization: Bearer {{v1_token}}
+Content-Type: application/json
+
+{
+  "state": "resolved"
+}
+
+### Reporte inexistente -> 404
+PATCH localhost:3000/condominiums/{{condominiumId}}/reports/00000000-0000-0000-0000-000000000000
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "state": "resolved"
+}
+
+### Admin finaliza el reporte -> 200 con resolvedAt y resolvedBy
+PATCH localhost:3000/condominiums/{{condominiumId}}/reports/{{reportId}}
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "state": "resolved"
+}
+
+### vecino2 ve su reporte finalizado -> [ { text, resolved: true } ]
+GET localhost:3000/reports/me
+Authorization: Bearer {{v2_token}}

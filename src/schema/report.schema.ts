@@ -6,3 +6,11 @@ export const CreateReportRequest = z.object({
     image: z.url().optional(),
 
 });
+export const ReportParams = z.object({
+    id: z.uuid(),
+    reportId: z.uuid(),
+});
+
+export const UpdateReportStateRequest = z.strictObject({
+    state: z.enum(['pending', 'in_review', 'resolved']),
+});
