@@ -1,6 +1,7 @@
 import {db} from "@/db/db.ts";
 import {condominiumMembers, condominiums, condominiumUnits, pendingCondominiumMembers, roles, userRoles, users} from "@/db/schema.ts";
 import {and, eq, getTableColumns, ne, sql} from "drizzle-orm";
+import {alias} from "drizzle-orm/pg-core";
 import {randomBytes} from "node:crypto";
 import {ConflictError, NotFoundError} from "@/utils/errors";
 import * as z from "zod";
@@ -16,6 +17,37 @@ export const getCondominiums = async () => {
         .from(condominiums)
         .leftJoin(users, eq(users.userId, condominiums.userId))
         .where(ne(condominiums.digitalState, 'deleted'));
+}
+
+const owner = alias(users, 'owner');
+const myCondominiumFields = {
+    condominiumId: condominiums.condominiumId,
+    name: condominiums.name,
+    adminUsername: owner.username,
+};
+
+export const getMyCondominiums = async (userId: string) => {
+    const [registered, joined] = await Promise.all([
+        db.selectDistinct(myCondominiumFields)
+            .from(userRoles)
+            .innerJoin(roles, eq(roles.roleId, userRoles.roleId))
+            .innerJoin(condominiums, eq(condominiums.condominiumId, userRoles.condominiumId))
+            .innerJoin(owner, eq(owner.userId, condominiums.userId))
+            .where(and(
+                eq(userRoles.userId, userId),
+                eq(roles.name, 'condominium_admin'),
+                eq(condominiums.digitalState, 'approved'),
+            )),
+        db.selectDistinct(myCondominiumFields)
+            .from(condominiumMembers)
+            .innerJoin(condominiums, eq(condominiums.condominiumId, condominiumMembers.condominiumId))
+            .innerJoin(owner, eq(owner.userId, condominiums.userId))
+            .where(and(
+                eq(condominiumMembers.userId, userId),
+                eq(condominiums.digitalState, 'approved'),
+            )),
+    ]);
+    return {registered, joined};
 }
 
 export const getCondominiumById = async (id: string) => {

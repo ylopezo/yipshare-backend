@@ -15,7 +15,8 @@ import {
     getCondominiumMembers,
     getCondominiumPendingMembers,
     approveCondominiumMember,
-    removeCondominiumMember
+    removeCondominiumMember,
+    getMyCondominiumsHandler
 } from "@/controllers/condominium.controller.ts";
 import {authenticationHandler, withAuth} from "@/middlewares/authentication.middleware.ts";
 import {withAuthz, withPermissions} from "@/middlewares/authorization.middleware.ts";
@@ -27,6 +28,7 @@ const router = Router();
 // Any logged-in user can request to join; they have no condominium-scoped role yet.
 router.post('/join', authenticationHandler, withAuthz(postJoinCondominium));
 
+router.get('/mine', authenticationHandler, withAuthz(getMyCondominiumsHandler));
 router.get('/', authenticationHandler, withPermissions('condominium:read.all') ,withAuthz(getListOfCondominiums));
 router.get('/:id', authenticationHandler, getIdFromParams('id'), withPermissions('condominium:read') ,withAuthz(getCondominium));
 router.get('/:id/units/', authenticationHandler, getIdFromParams('id'), withPermissions('condominium:read.units') ,withAuthz(getCondominiumUnits));

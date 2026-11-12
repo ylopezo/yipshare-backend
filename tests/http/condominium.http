@@ -1,0 +1,19 @@
+### Login
+POST localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "username": "Jonathan",
+  "password": "CAMBIA_ESTA_CONTRASENA"
+}
+
+> {%
+    client.global.set("auth_token", response.body.token);
+%}
+
+### Mis condominios -> 200 { registered, joined }
+GET localhost:3000/condominiums/mine
+Authorization: Bearer {{auth_token}}
+
+### Sin sesión -> 401
+GET localhost:3000/condominiums/mine
