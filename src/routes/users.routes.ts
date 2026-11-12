@@ -1,0 +1,29 @@
+import {Router} from "express";
+import {authenticationHandler, withAuth} from "@/middlewares/authentication.middleware.ts";
+import {withAuthz, withPermissions} from "@/middlewares/authorization.middleware.ts";
+import {
+    createUser,
+    deleteUser, deleteUserSelf,
+    getListOfUsers, getNotificationSelf, getNotificationsSelf,
+    getUser,
+    getUserSelf,
+    modifyUser, modifyUserSelf
+} from "@/controllers/users.controller.ts";
+import {deleteNotification} from "@/controllers/notifications.controller.ts";
+
+const router = Router();
+
+router.get('/', authenticationHandler, withPermissions('users:read.all') ,withAuthz(getListOfUsers));
+router.get('/:id', authenticationHandler, withPermissions('users:read') ,withAuthz(getUser));
+router.post('/:id', authenticationHandler, withPermissions('users:create'), withAuthz(createUser));
+router.patch('/:id', authenticationHandler, withPermissions('users:update'), withAuthz(modifyUser));
+router.delete('/:id', authenticationHandler, withPermissions('users:delete'), withAuthz(deleteUser));
+router.get('/me', authenticationHandler, withPermissions('users:read.self') ,withAuthz(getUserSelf));
+router.patch('/me', authenticationHandler, withPermissions('users:update.self'), withAuthz(modifyUserSelf));
+router.delete('/me', authenticationHandler, withPermissions('users:delete.self'), withAuthz(deleteUserSelf));
+router.get('/me/notifications', authenticationHandler, withPermissions('users:read.notifications'), withAuthz(getNotificationsSelf));
+router.get('/me/notifications/:id', authenticationHandler, withPermissions('users:read.notifications'), withAuthz(getNotificationSelf));
+router.delete('/me/notifications/:id', authenticationHandler, withPermissions('users:delete.notifications'), withAuthz(deleteNotification));
+
+export default router;
+

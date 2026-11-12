@@ -48,7 +48,8 @@ export const users = pgTable('users', {
     maternalSurname: varchar('maternal_surname'),
     name: varchar('name'),
     phoneNumber: varchar('phone_number'),
-    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    deletedAt: timestamp('created_at', { withTimezone: true }),
     computedRating: smallint('computed_rating').notNull().default(0),
     state: userStateEnum('state').notNull().default("active"),
 }, (table) => [
@@ -183,6 +184,7 @@ export const notifications = pgTable('notifications', {
     image: varchar('image'),
     action: jsonb('action').notNull(),
     readAt: timestamp('read_at', { withTimezone: true }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
 export const userRoles = pgTable('user_roles', {

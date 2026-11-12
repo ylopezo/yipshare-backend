@@ -6,6 +6,7 @@ import {getJwtSecret} from "@/config/jwt.ts";
 import {db} from "@/db/db.ts";
 import {createHash, randomBytes} from "node:crypto";
 import {SignJWT} from "jose";
+import {createUserService} from "@/services/user.service.ts";
 
 const SESSION_DURATION_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -39,26 +40,7 @@ export const registerService = async (name: string,
                                       phoneNumber: string,
                                       username: string,
                                       password: string) => {
-    const [[conflictingUsername], [conflictingEmail], [conflictingPhoneNumber]] = await Promise.all([
-        db.select().from(users).where(eq(users.username, username)).limit(1),
-        db.select().from(users).where(eq(users.email, email)).limit(1),
-        db.select().from(users).where(eq(users.phoneNumber, phoneNumber)).limit(1),
-    ]);
-
-    if (conflictingUsername) throw new ConflictError(`The username \'${username}\' is already registered.\'`);
-    if (conflictingEmail) throw new ConflictError(`The email \'${email}\' is already registered.`);
-    if (conflictingPhoneNumber) throw new ConflictError(`The phone \'${phoneNumber}\' is already registered.`);
-
-    const [user] = await db.insert(users).values({
-        username : username,
-        email: email,
-        passwordHash : await argon2.hash(password),
-        paternalSurname: paternalSurname,
-        maternalSurname: maternalSurname,
-        name: name,
-        phoneNumber : phoneNumber,
-    }).returning();
-
+    const user = await createUserService(name, paternalSurname, maternalSurname, email, phoneNumber, username, password);
     if (!user) throw new InternalServerError("Failed to register user");
 
     const session_token = randomBytes(32).toString('hex');
