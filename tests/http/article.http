@@ -1,0 +1,435 @@
+### ===== Preparación: usuarios, condominio y miembros =====
+# Si los vecinos ya existen, el registro responde 409; no importa, sigue con el login.
+
+### Registrar vecino1
+POST localhost:4600/auth/register
+Content-Type: application/json
+
+{
+  "name": "Ana",
+  "paternalSurname": "Lopez",
+  "maternalSurname": "Ruiz",
+  "email": "vecino1@test.com",
+  "phoneNumber": "+525500000001",
+  "username": "vecino1",
+  "password": "Vecino123@"
+}
+
+### Registrar vecino2
+POST localhost:4600/auth/register
+Content-Type: application/json
+
+{
+  "name": "Luis",
+  "paternalSurname": "Garcia",
+  "maternalSurname": "Diaz",
+  "email": "vecino2@test.com",
+  "phoneNumber": "+525500000002",
+  "username": "vecino2",
+  "password": "Vecino123@"
+}
+
+### Registrar vecino3 (no se une al condominio)
+POST localhost:4600/auth/register
+Content-Type: application/json
+
+{
+  "name": "Sara",
+  "paternalSurname": "Mora",
+  "maternalSurname": "Vega",
+  "email": "vecino3@test.com",
+  "phoneNumber": "+525500000003",
+  "username": "vecino3",
+  "password": "Vecino123@"
+}
+
+### Login vecino1
+POST localhost:4600/auth/login
+Content-Type: application/json
+
+{
+  "username": "vecino1",
+  "password": "Vecino123@"
+}
+
+> {%
+    client.global.set("v1_token", response.body.token);
+%}
+
+### Login vecino2
+POST localhost:4600/auth/login
+Content-Type: application/json
+
+{
+  "username": "vecino2",
+  "password": "Vecino123@"
+}
+
+> {%
+    client.global.set("v2_token", response.body.token);
+%}
+
+### Login vecino3
+POST localhost:4600/auth/login
+Content-Type: application/json
+
+{
+  "username": "vecino3",
+  "password": "Vecino123@"
+}
+
+> {%
+    client.global.set("v3_token", response.body.token);
+%}
+
+### Login superadmin
+POST localhost:4600/auth/login
+Content-Type: application/json
+
+{
+  "username": "superadmin",
+  "password": "Admin@1234"
+}
+
+> {%
+    client.global.set("super_token", response.body.token);
+%}
+
+### Login admin (será condominium_admin)
+POST localhost:4600/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "Admin@1234"
+}
+
+> {%
+    client.global.set("admin_token", response.body.token);
+%}
+
+### Admin crea condominio -> 201
+POST localhost:4600/condominiums
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "name": "Residencial Articulos",
+  "street": "Av. Siempre Viva 742",
+  "neighborhood": "Centro",
+  "postalCode": "06000",
+  "municipality": "Cuauhtemoc",
+  "city": "CDMX",
+  "state": "CDMX"
+}
+
+> {%
+    client.global.set("condominiumId", response.body.condominiumId);
+%}
+
+### Superadmin aprueba el condominio -> 200
+POST localhost:4600/condominiums/{{condominiumId}}/approve
+Authorization: Bearer {{super_token}}
+
+> {%
+    client.global.set("code", response.body.shortCode);
+%}
+
+### Admin crea una unidad -> 201
+POST localhost:4600/condominiums/{{condominiumId}}/units
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "name": "Depto 101"
+}
+
+> {%
+    client.global.set("unitId", response.body.condominiumUnitId);
+%}
+
+### vecino1 pide unirse -> 201
+POST localhost:4600/condominiums/join
+Authorization: Bearer {{v1_token}}
+Content-Type: application/json
+
+{
+  "code": "{{code}}",
+  "unit": "101"
+}
+
+> {%
+    client.global.set("v1_id", response.body.userId);
+%}
+
+### vecino2 pide unirse -> 201
+POST localhost:4600/condominiums/join
+Authorization: Bearer {{v2_token}}
+Content-Type: application/json
+
+{
+  "code": "{{code}}",
+  "unit": "101"
+}
+
+> {%
+    client.global.set("v2_id", response.body.userId);
+%}
+
+### Admin aprueba a vecino1 -> 204
+POST localhost:4600/condominiums/{{condominiumId}}/members/{{v1_id}}/approve
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "unitId": "{{unitId}}"
+}
+
+### Admin aprueba a vecino2 -> 204
+POST localhost:4600/condominiums/{{condominiumId}}/members/{{v2_id}}/approve
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "unitId": "{{unitId}}"
+}
+
+### ===== Crear =====
+
+### vecino1 crea un artículo -> 201
+POST localhost:4600/condominiums/{{condominiumId}}/articles
+Authorization: Bearer {{v1_token}}
+Content-Type: application/json
+
+{
+  "name": "Taladro",
+  "description": "Taladro inalámbrico con dos baterías",
+  "category": "Herramientas",
+  "state": "good",
+  "maximumLendTime": 7
+}
+
+> {%
+    client.global.set("articleId", response.body.articleId);
+%}
+
+### Nombre vacío -> 400
+POST localhost:4600/condominiums/{{condominiumId}}/articles
+Authorization: Bearer {{v1_token}}
+Content-Type: application/json
+
+{
+  "name": "",
+  "description": "Descripción suficiente",
+  "category": "Herramientas",
+  "state": "good",
+  "maximumLendTime": 7
+}
+
+### Préstamo de más de 30 días -> 400
+POST localhost:4600/condominiums/{{condominiumId}}/articles
+Authorization: Bearer {{v1_token}}
+Content-Type: application/json
+
+{
+  "name": "Escalera",
+  "description": "Escalera de aluminio de 3 metros",
+  "category": "Herramientas",
+  "state": "good",
+  "maximumLendTime": 60
+}
+
+### Categoría inexistente -> 404
+POST localhost:4600/condominiums/{{condominiumId}}/articles
+Authorization: Bearer {{v1_token}}
+Content-Type: application/json
+
+{
+  "name": "Escalera",
+  "description": "Escalera de aluminio de 3 metros",
+  "category": "Juguetes",
+  "state": "good",
+  "maximumLendTime": 7
+}
+
+### vecino3 (no es miembro) crea -> 403
+POST localhost:4600/condominiums/{{condominiumId}}/articles
+Authorization: Bearer {{v3_token}}
+Content-Type: application/json
+
+{
+  "name": "Licuadora",
+  "description": "Licuadora de vaso de vidrio",
+  "category": "Cocina",
+  "state": "excellent",
+  "maximumLendTime": 3
+}
+
+### ===== Listar =====
+
+### vecino2 lista -> 200 [ { name: Taladro, ownerId: vecino1, category: Herramientas } ]
+GET localhost:4600/condominiums/{{condominiumId}}/articles
+Authorization: Bearer {{v2_token}}
+
+### Buscar "tala" -> 200 [ Taladro ]
+GET localhost:4600/condominiums/{{condominiumId}}/articles?q=tala
+Authorization: Bearer {{v2_token}}
+
+### Buscar algo que no existe -> 200 []
+GET localhost:4600/condominiums/{{condominiumId}}/articles?q=xyz
+Authorization: Bearer {{v2_token}}
+
+### Admin del condominio (no es miembro) lista -> 200
+GET localhost:4600/condominiums/{{condominiumId}}/articles
+Authorization: Bearer {{admin_token}}
+
+### vecino3 (no es miembro) lista -> 403
+GET localhost:4600/condominiums/{{condominiumId}}/articles
+Authorization: Bearer {{v3_token}}
+
+### Condominio con id inválido -> 400
+GET localhost:4600/condominiums/no-es-uuid/articles
+Authorization: Bearer {{v2_token}}
+
+### ===== Editar =====
+
+### vecino1 edita su artículo -> 200
+PATCH localhost:4600/condominiums/{{condominiumId}}/articles/{{articleId}}
+Authorization: Bearer {{v1_token}}
+Content-Type: application/json
+
+{
+  "name": "Taladro Bosch",
+  "description": "Taladro inalámbrico con dos baterías y brocas",
+  "category": "Electrónica",
+  "state": "excellent",
+  "maximumLendTime": 14
+}
+
+### vecino2 edita un artículo ajeno -> 404
+PATCH localhost:4600/condominiums/{{condominiumId}}/articles/{{articleId}}
+Authorization: Bearer {{v2_token}}
+Content-Type: application/json
+
+{
+  "name": "Mío",
+  "description": "Intento editar algo ajeno",
+  "category": "Otros",
+  "state": "bad",
+  "maximumLendTime": 1
+}
+
+### Artículo inexistente -> 404
+PATCH localhost:4600/condominiums/{{condominiumId}}/articles/00000000-0000-0000-0000-000000000000
+Authorization: Bearer {{v1_token}}
+Content-Type: application/json
+
+{
+  "name": "Nada",
+  "description": "Este artículo no existe",
+  "category": "Otros",
+  "state": "good",
+  "maximumLendTime": 1
+}
+
+### Artículo en préstamo -> 409
+# Antes, en psql: UPDATE articles SET availability = 'pending' WHERE name = 'Taladro Bosch';
+# Después, regrésalo: UPDATE articles SET availability = 'available' WHERE name = 'Taladro Bosch';
+PATCH localhost:4600/condominiums/{{condominiumId}}/articles/{{articleId}}
+Authorization: Bearer {{v1_token}}
+Content-Type: application/json
+
+{
+  "name": "Taladro",
+  "description": "Intento editar mientras está prestado",
+  "category": "Herramientas",
+  "state": "good",
+  "maximumLendTime": 7
+}
+
+### ===== Borrar =====
+
+### vecino2 borra un artículo ajeno -> 404
+DELETE localhost:4600/condominiums/{{condominiumId}}/articles/{{articleId}}
+Authorization: Bearer {{v2_token}}
+
+### Admin del condominio borra el artículo de vecino1 -> 204
+DELETE localhost:4600/condominiums/{{condominiumId}}/articles/{{articleId}}
+Authorization: Bearer {{admin_token}}
+
+### Ya no aparece en la lista -> 200 []
+GET localhost:4600/condominiums/{{condominiumId}}/articles
+Authorization: Bearer {{v1_token}}
+
+### Borrarlo otra vez -> 404
+DELETE localhost:4600/condominiums/{{condominiumId}}/articles/{{articleId}}
+Authorization: Bearer {{admin_token}}
+
+### vecino2 crea uno propio -> 201
+POST localhost:4600/condominiums/{{condominiumId}}/articles
+Authorization: Bearer {{v2_token}}
+Content-Type: application/json
+
+{
+  "name": "Podadora",
+  "description": "Podadora eléctrica para pasto",
+  "category": "Jardinería",
+  "state": "medium",
+  "maximumLendTime": 2
+}
+
+> {%
+    client.global.set("articleId2", response.body.articleId);
+%}
+
+### vecino2 borra su propio artículo -> 204
+DELETE localhost:4600/condominiums/{{condominiumId}}/articles/{{articleId2}}
+Authorization: Bearer {{v2_token}}
+
+### ===== Expulsar vecino =====
+
+### vecino1 crea un artículo antes de ser expulsado -> 201
+POST localhost:4600/condominiums/{{condominiumId}}/articles
+Authorization: Bearer {{v1_token}}
+Content-Type: application/json
+
+{
+  "name": "Aspiradora",
+  "description": "Aspiradora de mano recargable",
+  "category": "Limpieza",
+  "state": "good",
+  "maximumLendTime": 3
+}
+
+> {%
+    client.global.set("articleId3", response.body.articleId);
+%}
+
+### vecino2 ve la aspiradora -> 200 [ Aspiradora ]
+GET localhost:4600/condominiums/{{condominiumId}}/articles?q=aspir
+Authorization: Bearer {{v2_token}}
+
+### Admin expulsa a vecino1 -> 204
+DELETE localhost:4600/condominiums/{{condominiumId}}/members/{{v1_id}}
+Authorization: Bearer {{admin_token}}
+
+### vecino2 ya no ve la aspiradora -> 200 []
+GET localhost:4600/condominiums/{{condominiumId}}/articles?q=aspir
+Authorization: Bearer {{v2_token}}
+
+### vecino1 ya no puede listar -> 403
+GET localhost:4600/condominiums/{{condominiumId}}/articles
+Authorization: Bearer {{v1_token}}
+
+### vecino1 ya no puede editar su artículo -> 404
+PATCH localhost:4600/condominiums/{{condominiumId}}/articles/{{articleId3}}
+Authorization: Bearer {{v1_token}}
+Content-Type: application/json
+
+{
+  "name": "Aspiradora",
+  "description": "Intento editar después de ser expulsado",
+  "category": "Limpieza",
+  "state": "good",
+  "maximumLendTime": 3
+}

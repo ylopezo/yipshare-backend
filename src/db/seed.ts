@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { db } from "@/db/db.ts";
-import { permissions, roles, rolePermissions, users, userRoles } from "@/db/schema.ts";
+import { categories, permissions, roles, rolePermissions, users, userRoles } from "@/db/schema.ts";
 import { eq } from "drizzle-orm";
 import {ALL_PERMS} from "@/types/permissions.ts";
 import {env} from "@/env.ts";
@@ -20,6 +20,14 @@ async function seed() {
         .insert(permissions)
         .values(ALL_PERMS.map((name) => ({ name })))
         .onConflictDoNothing({ target: permissions.name });
+
+    await db
+        .insert(categories)
+        .values([
+            "Herramientas", "Electrodomésticos", "Jardinería", "Cocina",
+            "Limpieza", "Electrónica", "Automotriz", "Otros",
+        ].map((name) => ({ name })))
+        .onConflictDoNothing({ target: categories.name });
 
     const allDbPermissions = await db.select().from(permissions);
     const globalPermissions = allDbPermissions.filter((perm) => !perm.name.startsWith("report:"));

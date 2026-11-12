@@ -36,7 +36,7 @@ export const permissions = pgTable('permissions', {
 
 export const categories = pgTable('categories', {
     categoryId: uuid('category_id').primaryKey().$defaultFn(() => uuidv7()),
-    name: varchar('name').notNull(),
+    name: varchar('name').notNull().unique(),
 });
 
 export const users = pgTable('users', {
@@ -117,6 +117,7 @@ export const articles = pgTable('articles', {
     state: articleStateEnum('state').notNull(),
     availability: articleAvailabilityEnum('availability').notNull(),
     maximumLendTime: smallint('maximum_lend_time').notNull(),
+    deletedAt: timestamp('deleted_at', { withTimezone: true }),
 }, (table) => [
     check('chk_positive_lend_time', sql`${table.maximumLendTime} > 0`),
 ]);

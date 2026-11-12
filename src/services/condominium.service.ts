@@ -1,6 +1,6 @@
 import {db} from "@/db/db.ts";
-import {condominiumMembers, condominiums, condominiumUnits, notifications, pendingCondominiumMembers, roles, userRoles, users} from "@/db/schema.ts";
-import {and, eq, getTableColumns, ne, sql} from "drizzle-orm";
+import {articles, condominiumMembers, condominiums, condominiumUnits, notifications, pendingCondominiumMembers, roles, userRoles, users} from "@/db/schema.ts";
+import {and, eq, getTableColumns, isNull, ne, sql} from "drizzle-orm";
 import {alias} from "drizzle-orm/pg-core";
 import {randomBytes} from "node:crypto";
 import {ConflictError, NotFoundError} from "@/utils/errors";
@@ -97,7 +97,6 @@ export const createCondominium = async (data: CreateCondominiumData, userId: str
                 return condominium;
             });
         } catch (error: any) {
-            // 23505 = unique violation: shortCode collided, try another one
             if ((error?.cause?.code ?? error?.code) !== '23505') throw error;
         }
     }
@@ -309,5 +308,10 @@ export const removeMember = async (condominiumId: string, userId: string, adminI
         await tx
             .delete(userRoles)
             .where(and(eq(userRoles.userId, userId), eq(userRoles.condominiumId, condominiumId)));
+
+        await tx
+            .update(articles)
+            .set({deletedAt: new Date()})
+            .where(and(eq(articles.lendingUser, userId), eq(articles.condominiumId, condominiumId), isNull(articles.deletedAt)));
     });
 }
