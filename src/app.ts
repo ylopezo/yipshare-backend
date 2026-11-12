@@ -9,5 +9,4 @@ export const app = express();
 app.use(express.json())
 app.use('/auth', authRoutes);
 app.use('/condominiums', condominiumRoutes);
-app.router.post('/', postCondominium);
 app.use(errorHandler);

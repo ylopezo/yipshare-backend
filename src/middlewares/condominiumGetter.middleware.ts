@@ -1,4 +1,5 @@
 import type {NextFunction, Request, Response} from "express";
+import * as z from "zod";
 
 export const getIdFromBody = (fieldName: string) => {
     return async function getCondominiumIdFromRequestBodyHandler(req: Request,
@@ -13,3 +14,11 @@ export const getIdFromBody = (fieldName: string) => {
         next();
     }
 }
+// Reads the condominium id from the URL so withPermissions can resolve condominium-scoped roles.
+export const getIdFromParams = (paramName: string) =>
+    (req: Request, res: Response, next: NextFunction) => {
+        const value = req.params[paramName];
+        // Invalid ids fall back to global permissions; the controller's zod parse returns 400.
+        req.condominiumId = z.uuid().safeParse(value).success ? value as string : null;
+        next();
+    };

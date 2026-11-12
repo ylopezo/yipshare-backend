@@ -1,11 +1,10 @@
 import {db} from "@/db/db.ts";
-import {condominiums, condominiumUnits} from "@/db/schema.ts";
+import {condominiumMembers, condominiums, condominiumUnits, pendingCondominiumMembers, roles, userRoles, users} from "@/db/schema.ts";
 import {and, eq, ne} from "drizzle-orm";
 import {randomBytes} from "node:crypto";
-import {ConflictError, ForbiddenError, NotFoundError} from "@/utils/errors";
-import {isGlobalAdmin} from "@/services/role.service.ts";
+import {ConflictError, NotFoundError} from "@/utils/errors";
 import * as z from "zod";
-import {CreateCondominiumRequest, CreateCondominiumUnitRequest, UpdateCondominiumRequest} from "@/schema/condominium.schema.ts";
+import {CreateCondominiumRequest, CreateCondominiumUnitRequest, JoinCondominiumRequest, UpdateCondominiumRequest} from "@/schema/condominium.schema.ts";
 
 export const getCondominiums = async () => {
     return db.select().from(condominiums).where(ne(condominiums.digitalState, 'deleted'));
@@ -31,26 +30,43 @@ export const getUnitsByCondominium = async (id: string) => {
         .where(eq(condominiumUnits.condominiumId, id));
 }
 
+const getRoleId = async (name: string) => {
+    const [role] = await db.select().from(roles).where(eq(roles.name, name)).limit(1);
+    if (!role) throw new Error(`Role '${name}' missing, run bun run db:seed`);
+    return role.roleId;
+}
+
 type CreateCondominiumData = z.infer<typeof CreateCondominiumRequest>;
 
 export const createCondominium = async (data: CreateCondominiumData, userId: string) => {
-    const [condominium] = await db
-        .insert(condominiums)
-        .values({
-            ...data,
-            userId,
-            shortCode: randomBytes(3).toString('hex').toUpperCase(),
-            digitalState: 'pending',
-        })
-        .returning();
+    const adminRoleId = await getRoleId('condominium_admin');
 
-    return condominium;
+    for (let attempt = 0; attempt < 5; attempt++) {
+        try {
+            return await db.transaction(async (tx) => {
+                const [condominium] = await tx.insert(condominiums).values({
+                    ...data, userId,
+                    shortCode: randomBytes(3).toString('hex').toUpperCase(),
+                    digitalState: 'pending',
+                }).returning();
+
+                await tx.insert(userRoles).values({
+                    userId, condominiumId: condominium!.condominiumId,
+                    roleId: adminRoleId, isGlobal: false,
+                });
+                return condominium;
+            });
+        } catch (error: any) {
+            // 23505 = unique violation: shortCode collided, try another one
+            if ((error?.cause?.code ?? error?.code) !== '23505') throw error;
+        }
+    }
+    throw new ConflictError("Could not generate a unique code");
 }
 
 type UpdateCondominiumData = z.infer<typeof UpdateCondominiumRequest>;
 
-export const updateCondominium = async (id: string, data: UpdateCondominiumData, userId: string) => {
-    if (!(await isGlobalAdmin(userId))) throw new ForbiddenError("Only global admins can update condominiums");
+export const updateCondominium = async (id: string, data: UpdateCondominiumData) => {
     await getCondominiumById(id);
 
     const [condominium] = await db
@@ -62,8 +78,7 @@ export const updateCondominium = async (id: string, data: UpdateCondominiumData,
     return condominium;
 }
 
-export const deleteCondominium = async (id: string, userId: string) => {
-    if (!(await isGlobalAdmin(userId))) throw new ForbiddenError("Only global admins can delete condominiums");
+export const deleteCondominium = async (id: string) => {
     await getCondominiumById(id);
 
     await db
@@ -73,7 +88,6 @@ export const deleteCondominium = async (id: string, userId: string) => {
 }
 
 export const approveCondominium = async (id: string, userId: string) => {
-    if (!(await isGlobalAdmin(userId))) throw new ForbiddenError("Only global admins can approve condominiums");
     const existing = await getCondominiumById(id);
     if (existing.digitalState !== 'pending') throw new ConflictError("Condominium is not pending");
 
@@ -101,8 +115,7 @@ export const getUnitById = async (condominiumId: string, unitId: string) => {
 
 type CondominiumUnitData = z.infer<typeof CreateCondominiumUnitRequest>;
 
-export const createUnit = async (condominiumId: string, data: CondominiumUnitData, userId: string) => {
-    if (!(await isGlobalAdmin(userId))) throw new ForbiddenError("Only global admins can create units");
+export const createUnit = async (condominiumId: string, data: CondominiumUnitData) => {
     await getCondominiumById(condominiumId);
 
     const [unit] = await db
@@ -113,8 +126,7 @@ export const createUnit = async (condominiumId: string, data: CondominiumUnitDat
     return unit;
 }
 
-export const updateUnit = async (condominiumId: string, unitId: string, data: CondominiumUnitData, userId: string) => {
-    if (!(await isGlobalAdmin(userId))) throw new ForbiddenError("Only global admins can update units");
+export const updateUnit = async (condominiumId: string, unitId: string, data: CondominiumUnitData) => {
     await getUnitById(condominiumId, unitId);
 
     const [unit] = await db
@@ -126,8 +138,7 @@ export const updateUnit = async (condominiumId: string, unitId: string, data: Co
     return unit;
 }
 
-export const deleteUnit = async (condominiumId: string, unitId: string, userId: string) => {
-    if (!(await isGlobalAdmin(userId))) throw new ForbiddenError("Only global admins can delete units");
+export const deleteUnit = async (condominiumId: string, unitId: string) => {
     await getUnitById(condominiumId, unitId);
 
     try {
@@ -137,4 +148,102 @@ export const deleteUnit = async (condominiumId: string, unitId: string, userId: 
         if ((error?.cause?.code ?? error?.code) === '23503') throw new ConflictError("Unit has members assigned");
         throw error;
     }
+}
+
+type JoinCondominiumData = z.infer<typeof JoinCondominiumRequest>;
+
+export const requestJoin = async (userId: string, {code, unit, unitId}: JoinCondominiumData) => {
+    const [condominium] = await db.select().from(condominiums).where(eq(condominiums.shortCode, code)).limit(1);
+    if (!condominium || condominium.digitalState !== 'approved') throw new NotFoundError("Invalid code");
+    const condominiumId = condominium.condominiumId;
+
+    await getUnitById(condominiumId, unitId);
+
+    const [member] = await db
+        .select()
+        .from(condominiumMembers)
+        .where(and(eq(condominiumMembers.userId, userId), eq(condominiumMembers.condominiumId, condominiumId)))
+        .limit(1);
+    if (member) throw new ConflictError("Already a member");
+
+    const [pending] = await db
+        .insert(pendingCondominiumMembers)
+        .values({userId, condominiumId, unit, suggestedUnitId: unitId})
+        .onConflictDoNothing()
+        .returning();
+    if (!pending) throw new ConflictError("Request already pending");
+
+    return pending;
+}
+
+export const getMembers = async (condominiumId: string) => {
+    await getCondominiumById(condominiumId);
+    return db
+        .select({
+            userId: users.userId,
+            username: users.username,
+            name: users.name,
+            paternalSurname: users.paternalSurname,
+            unitId: condominiumUnits.condominiumUnitId,
+            unitName: condominiumUnits.name,
+        })
+        .from(condominiumMembers)
+        .innerJoin(users, eq(condominiumMembers.userId, users.userId))
+        .innerJoin(condominiumUnits, eq(condominiumMembers.condominiumUnitId, condominiumUnits.condominiumUnitId))
+        .where(eq(condominiumMembers.condominiumId, condominiumId));
+}
+
+export const getPendingMembers = async (condominiumId: string) => {
+    await getCondominiumById(condominiumId);
+    return db
+        .select({
+            userId: users.userId,
+            username: users.username,
+            name: users.name,
+            paternalSurname: users.paternalSurname,
+            unit: pendingCondominiumMembers.unit,
+            suggestedUnitId: pendingCondominiumMembers.suggestedUnitId,
+        })
+        .from(pendingCondominiumMembers)
+        .innerJoin(users, eq(pendingCondominiumMembers.userId, users.userId))
+        .where(eq(pendingCondominiumMembers.condominiumId, condominiumId));
+}
+
+export const approveMember = async (condominiumId: string, userId: string, unitId?: string) => {
+    if (unitId) await getUnitById(condominiumId, unitId);
+    const residentRoleId = await getRoleId('resident');
+
+    await db.transaction(async (tx) => {
+        const [pending] = await tx
+            .delete(pendingCondominiumMembers)
+            .where(and(eq(pendingCondominiumMembers.userId, userId), eq(pendingCondominiumMembers.condominiumId, condominiumId)))
+            .returning();
+        if (!pending) throw new NotFoundError("Join request not found");
+
+        await tx.insert(condominiumMembers).values({
+            userId,
+            condominiumId,
+            condominiumUnitId: unitId ?? pending.suggestedUnitId,
+        });
+        await tx
+            .insert(userRoles)
+            .values({userId, condominiumId, roleId: residentRoleId, isGlobal: false})
+            .onConflictDoNothing();
+    });
+}
+
+export const removeMember = async (condominiumId: string, userId: string, adminId: string) => {
+    if (userId === adminId) throw new ConflictError("You can't remove yourself");
+
+    await db.transaction(async (tx) => {
+        const removed = await tx
+            .delete(condominiumMembers)
+            .where(and(eq(condominiumMembers.userId, userId), eq(condominiumMembers.condominiumId, condominiumId)))
+            .returning();
+        if (removed.length === 0) throw new NotFoundError("Member not found");
+
+        await tx
+            .delete(userRoles)
+            .where(and(eq(userRoles.userId, userId), eq(userRoles.condominiumId, condominiumId)));
+    });
 }
