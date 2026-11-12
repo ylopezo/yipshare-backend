@@ -8,6 +8,7 @@ import {
 } from "@/services/user.service.ts";
 import {ModifyUserRequest, UserIdParams} from "@/schema/users.schema.ts";
 import {RegisterRequest} from "@/schema/auth.schema.ts";
+import {getNotificationServiceUserFiltered, getNotificationsService} from "@/services/notification.service.ts";
 
 export const getListOfUsers = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
@@ -103,6 +104,23 @@ export const deleteUserSelf = async (req: AuthorizedRequest, res: Response, next
     try {
         await deleteUserService(req.session.userId);
         return res.status(204);
+    } catch (error) {
+        next(error);
+    }
+}
+
+export const getNotificationsSelf = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
+    try {
+        return res.status(200).json(await getNotificationsService(req.session.userId));
+    } catch (error) {
+        next(error);
+    }
+}
+
+export const getNotificationSelf = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
+    try {
+        const params = UserIdParams.parse(req.params);
+        return res.status(200).json(await getNotificationServiceUserFiltered(req.session.userId, params.id));
     } catch (error) {
         next(error);
     }

@@ -179,6 +179,7 @@ export const notifications = pgTable('notifications', {
     body: text('body').notNull(),
     image: varchar('image'),
     action: jsonb('action').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
 export const userRoles = pgTable('user_roles', {

@@ -6,5 +6,3 @@ export const UserIdParams = z.object({
 });
 
 export const ModifyUserRequest = RegisterRequest.partial().refine((data) => Object.keys(data).length > 0, "At least one field is required");
-
-

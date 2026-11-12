@@ -1,5 +1,5 @@
 import {db} from "@/db/db.ts";
-import {condominiums, users} from "@/db/schema.ts";
+import {notifications, users} from "@/db/schema.ts";
 import {and, eq, isNull, ne} from "drizzle-orm";
 import {ConflictError, NotFoundError} from "@/utils/errors";
 import * as argon2 from 'argon2';

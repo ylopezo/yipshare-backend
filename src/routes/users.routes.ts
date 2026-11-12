@@ -4,11 +4,12 @@ import {withAuthz, withPermissions} from "@/middlewares/authorization.middleware
 import {
     createUser,
     deleteUser, deleteUserSelf,
-    getListOfUsers,
+    getListOfUsers, getNotificationSelf, getNotificationsSelf,
     getUser,
     getUserSelf,
     modifyUser, modifyUserSelf
 } from "@/controllers/users.controller.ts";
+import {deleteNotification} from "@/controllers/notifications.controller.ts";
 
 const router = Router();
 
@@ -20,6 +21,9 @@ router.delete('/:id', authenticationHandler, withPermissions('users:delete'), wi
 router.get('/me', authenticationHandler, withPermissions('users:read.self') ,withAuthz(getUserSelf));
 router.patch('/me', authenticationHandler, withPermissions('users:update.self'), withAuthz(modifyUserSelf));
 router.delete('/me', authenticationHandler, withPermissions('users:delete.self'), withAuthz(deleteUserSelf));
+router.get('/me/notifications', authenticationHandler, withPermissions('users:read.notifications'), withAuthz(getNotificationsSelf));
+router.get('/me/notifications/:id', authenticationHandler, withPermissions('users:read.notifications'), withAuthz(getNotificationSelf));
+router.delete('/me/notifications/:id', authenticationHandler, withPermissions('users:delete.notifications'), withAuthz(deleteNotification));
 
 export default router;
 
