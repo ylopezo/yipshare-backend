@@ -1,5 +1,5 @@
 import {type Request, type Response, type NextFunction} from "express";
-import {getCondominiums, getMyCondominiums, getCondominiumById, getUnitsByCondominium, createCondominium, updateCondominium, deleteCondominium, approveCondominium, getUnitById, createUnit, updateUnit, deleteUnit, requestJoin, getMembers, getPendingMembers, approveMember, removeMember} from "@/services/condominium.service.ts";
+import {getCondominiums, getMyCondominiums, getCondominiumById, rejectCondominium, getUnitsByCondominium, createCondominium, updateCondominium, deleteCondominium, approveCondominium, getUnitById, createUnit, updateUnit, deleteUnit, requestJoin, getMembers, getPendingMembers, approveMember, removeMember} from "@/services/condominium.service.ts";
 import {CondominiumIdParams, CondominiumUnitParams, CreateCondominiumRequest, CreateCondominiumUnitRequest, UpdateCondominiumRequest, UpdateCondominiumUnitRequest, JoinCondominiumRequest, MemberParams, ApproveMemberRequest} from "@/schema/condominium.schema.ts";
 import type {AuthorizedRequest} from "@/middlewares/authorization.middleware.ts";
 
@@ -68,6 +68,16 @@ export const approveCondominiumHandler = async (req: AuthorizedRequest, res: Res
         const {id} = CondominiumIdParams.parse(req.params);
         const condominium = await approveCondominium(id, userId);
         return res.status(200).json(condominium);
+    } catch (error) {
+        next(error);
+    }
+}
+
+export const rejectCondominiumHandler = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
+    try {
+        const {id} = CondominiumIdParams.parse(req.params);
+        await rejectCondominium(id);
+        return res.status(204).end();
     } catch (error) {
         next(error);
     }

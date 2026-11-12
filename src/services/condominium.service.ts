@@ -1,5 +1,5 @@
 import {db} from "@/db/db.ts";
-import {condominiumMembers, condominiums, condominiumUnits, pendingCondominiumMembers, roles, userRoles, users} from "@/db/schema.ts";
+import {condominiumMembers, condominiums, condominiumUnits, notifications, pendingCondominiumMembers, roles, userRoles, users} from "@/db/schema.ts";
 import {and, eq, getTableColumns, ne, sql} from "drizzle-orm";
 import {alias} from "drizzle-orm/pg-core";
 import {randomBytes} from "node:crypto";
@@ -131,13 +131,38 @@ export const approveCondominium = async (id: string, userId: string) => {
     const existing = await getCondominiumById(id);
     if (existing.digitalState !== 'pending') throw new ConflictError("Condominium is not pending");
 
-    const [condominium] = await db
-        .update(condominiums)
-        .set({digitalState: 'approved', approvedAt: new Date(), approvedBy: userId})
-        .where(eq(condominiums.condominiumId, id))
-        .returning();
+    return db.transaction(async (tx) => {
+        const [condominium] = await tx
+            .update(condominiums)
+            .set({digitalState: 'approved', approvedAt: new Date(), approvedBy: userId})
+            .where(eq(condominiums.condominiumId, id))
+            .returning();
 
-    return condominium;
+        await tx.insert(notifications).values({
+            userId: existing.userId,
+            header: 'Condominio aceptado',
+            body: `Tu condominio «${existing.name}» fue aceptado. Comparte el código para que tus vecinos se unan.`,
+            action: {type: 'condominium_approved', condominiumId: id, shortCode: existing.shortCode},
+        });
+
+        return condominium;
+    });
+}
+
+export const rejectCondominium = async (id: string) => {
+    const existing = await getCondominiumById(id);
+    if (existing.digitalState !== 'pending') throw new ConflictError("Condominium is not pending");
+
+    await db.transaction(async (tx) => {
+        await tx.update(condominiums).set({digitalState: 'deleted'}).where(eq(condominiums.condominiumId, id));
+        await tx.delete(userRoles).where(eq(userRoles.condominiumId, id));
+        await tx.insert(notifications).values({
+            userId: existing.userId,
+            header: 'Condominio rechazado',
+            body: `Tu solicitud para registrar «${existing.name}» fue rechazada.`,
+            action: {type: 'condominium_rejected', condominiumId: id},
+        });
+    });
 }
 
 export const getUnitById = async (condominiumId: string, unitId: string) => {
