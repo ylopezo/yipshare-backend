@@ -8,7 +8,11 @@ import {
 } from "@/services/user.service.ts";
 import {ModifyUserRequest, UserIdParams} from "@/schema/users.schema.ts";
 import {RegisterRequest} from "@/schema/auth.schema.ts";
-import {getNotificationServiceUserFiltered, getNotificationsService} from "@/services/notification.service.ts";
+import {
+    getNotificationServiceUserFiltered,
+    getNotificationsService, markNotificationAsRead, markNotificationAsReadSelf,
+} from "@/services/notification.service.ts";
+import {NotificationFetchIdParams} from "@/schema/notifications.schema.ts";
 
 export const getListOfUsers = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
@@ -119,8 +123,18 @@ export const getNotificationsSelf = async (req: AuthorizedRequest, res: Response
 
 export const getNotificationSelf = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
-        const params = UserIdParams.parse(req.params);
+        const params = NotificationFetchIdParams.parse(req.params);
         return res.status(200).json(await getNotificationServiceUserFiltered(req.session.userId, params.id));
+    } catch (error) {
+        next(error);
+    }
+}
+
+export const readNotificationSelf = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
+    try {
+        const params = NotificationFetchIdParams.parse(req.params);
+        await markNotificationAsReadSelf(req.session.userId, params.id);
+        return res.status(204).end();
     } catch (error) {
         next(error);
     }

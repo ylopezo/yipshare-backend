@@ -5,8 +5,9 @@ import {
     createNotification,
     deleteNotification,
     getNotification,
-    getNotifications
+    getNotifications, readNotification
 } from "@/controllers/notifications.controller.ts";
+import {markNotificationAsRead} from "@/services/notification.service.ts";
 
 const router = Router();
 
@@ -14,6 +15,7 @@ router.get('/', authenticationHandler, withPermissions('notifications:read'), wi
 router.get('/:id', authenticationHandler, withPermissions('notifications:read'), withAuthz(getNotification));
 router.post('/', authenticationHandler, withPermissions('notifications:create') ,withAuthz(createNotification));
 router.delete('/:id', authenticationHandler, withPermissions('notifications:delete') ,withAuthz(deleteNotification));
+router.post('/:id/read', authenticationHandler, withPermissions('notifications:update.markRead'), withAuthz(readNotification))
 
 export default router;
 
