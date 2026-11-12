@@ -9,6 +9,8 @@ export const ALL_PERMS = [
     'condominium:read.all',
     'condominium:read.units',
     'condominium:approve',
+    'users:read',
+    'users:read.all',
     "admin:test",
 ] as const;
 
