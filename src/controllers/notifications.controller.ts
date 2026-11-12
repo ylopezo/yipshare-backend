@@ -3,11 +3,30 @@ import type {NextFunction, Response} from "express";
 import {
     createNotificationService,
     deleteNotificationService,
-    getNotificationsService
+    getNotifications as getUserNotifications,
+    getNotificationService,
+    getNotificationsService,
+    markNotificationsAsRead
 } from "@/services/notification.service.ts";
-import {getNotificationService} from "@/services/notification.service.ts";
 import {NotificationCreate, NotificationFetchIdParams} from "@/schema/notifications.schema.ts";
 import {UserIdParams} from "@/schema/users.schema.ts";
+
+export const getMyNotifications = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
+    try {
+        return res.status(200).json(await getUserNotifications(req.session.userId));
+    } catch (error) {
+        next(error);
+    }
+}
+
+export const readMyNotifications = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
+    try {
+        await markNotificationsAsRead(req.session.userId);
+        return res.status(204).end();
+    } catch (error) {
+        next(error);
+    }
+}
 
 export const getNotifications = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
