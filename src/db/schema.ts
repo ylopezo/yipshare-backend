@@ -11,7 +11,7 @@ import {
     jsonb,
     check,
     unique,
-    primaryKey
+    primaryKey, integer, serial
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
@@ -68,7 +68,7 @@ export const sessions = pgTable('sessions', {
 
 export const condominiums = pgTable('condominiums', {
     condominiumId: uuid('condominium_id').primaryKey().$defaultFn(() => uuidv7()),
-    shortCode: char('short_code', { length: 6 }).notNull().unique(),
+    shortCode: serial('short_code').notNull().unique(),
     userId: uuid('user_id').notNull(),
     name: varchar('name').notNull(),
     street: varchar('street').notNull(),
@@ -199,7 +199,7 @@ export const userRoles = pgTable('user_roles', {
     condominiumId: uuid('condominium_id').references(() => condominiums.condominiumId),
     roleId: uuid('role_id')
         .notNull()
-        .references(() => roles.roleId),
+        .references(() => roles.roleId, { onDelete: 'cascade' }),
     isGlobal: boolean('is_global').notNull(),
 }, (table) => [
     unique('uq_user_condominium_role_user_roles')
@@ -214,10 +214,10 @@ export const userRoles = pgTable('user_roles', {
 export const rolePermissions = pgTable('role_permissions', {
     roleId: uuid('role_id')
         .notNull()
-        .references(() => roles.roleId),
+        .references(() => roles.roleId, { onDelete: 'cascade' }),
     permissionId: uuid('permission_id')
         .notNull()
-        .references(() => permissions.permissionId),
+        .references(() => permissions.permissionId, { onDelete: 'cascade' }),
     allowed: boolean().notNull(),
 }, (table) => [
     primaryKey({ columns: [table.roleId, table.permissionId] })
@@ -231,7 +231,7 @@ export const permissionOverrides = pgTable('permission_overrides', {
     condominiumId: uuid('condominium_id').references(() => condominiums.condominiumId),
     permissionId: uuid('permission_id')
         .notNull()
-        .references(() => permissions.permissionId),
+        .references(() => permissions.permissionId, { onDelete: 'cascade' }),
     allowed: boolean().notNull(),
 }, (table) => [
     unique('uq_user_condominium_permission_permission_overrides')
@@ -273,7 +273,7 @@ export const articleCategories = pgTable('article_categories', {
         .references(() => articles.articleId),
     categoryId: uuid('category_id')
         .notNull()
-        .references(() => categories.categoryId),
+        .references(() => categories.categoryId, { onDelete: 'cascade' }),
 }, (table) => [
     primaryKey({ columns: [table.articleId, table.categoryId] }),
 ]);

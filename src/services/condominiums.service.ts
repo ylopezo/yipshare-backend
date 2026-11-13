@@ -2,11 +2,12 @@ import {db} from "@/db/db.ts";
 import {articles, condominiumMembers, condominiums, condominiumUnits, notifications, pendingCondominiumMembers, roles, userRoles, users} from "@/db/schema.ts";
 import {and, eq, getTableColumns, isNull, ne, sql} from "drizzle-orm";
 import {alias} from "drizzle-orm/pg-core";
-import {randomBytes} from "node:crypto";
 import {ConflictError, NotFoundError} from "@/utils/errors";
-import {getRoleId} from "@/services/roles.service.ts";
 import * as z from "zod";
 import {CreateCondominiumRequest, CreateCondominiumUnitRequest, JoinCondominiumRequest, UpdateCondominiumRequest} from "@/schema/condominiums.schema.ts";
+import {getRoleByNameService} from "@/services/roles.service.ts";
+import type {CondominiumExportType, CondominiumSelectType} from "@/types/db/schema";
+import {decodeInvitationCode, encodeInvitationCode} from "@/utils/code_scrambling.util.ts";
 
 export const getCondominiums = async () => {
     return db
@@ -34,7 +35,7 @@ export const getMyCondominiums = async (userId: string) => {
             .from(userRoles)
             .innerJoin(roles, eq(roles.roleId, userRoles.roleId))
             .innerJoin(condominiums, eq(condominiums.condominiumId, userRoles.condominiumId))
-            .innerJoin(owner, eq(owner.userId, condominiums.userId))
+            .innerJoin(users, eq(users.userId, condominiums.userId))
             .where(and(
                 eq(userRoles.userId, userId),
                 eq(roles.name, 'condominium_admin'),
@@ -43,7 +44,7 @@ export const getMyCondominiums = async (userId: string) => {
         db.selectDistinct(safeCondominiumFields)
             .from(condominiumMembers)
             .innerJoin(condominiums, eq(condominiums.condominiumId, condominiumMembers.condominiumId))
-            .innerJoin(owner, eq(owner.userId, condominiums.userId))
+            .innerJoin(users, eq(users.userId, condominiums.userId))
             .where(and(
                 eq(condominiumMembers.userId, userId),
                 eq(condominiums.digitalState, 'approved'),
@@ -61,7 +62,7 @@ export const getCondominiumById = async (id: string) => {
 
     if (!condominium || condominium.digitalState === 'deleted') throw new NotFoundError("Condominium not found");
 
-    return condominium;
+    return processCondominiumForExport(condominium);
 }
 
 export const getUnitsByCondominium = async (id: string) => {
@@ -75,28 +76,25 @@ export const getUnitsByCondominium = async (id: string) => {
 type CreateCondominiumData = z.infer<typeof CreateCondominiumRequest>;
 
 export const createCondominium = async (data: CreateCondominiumData, userId: string) => {
-    const adminRoleId = await getRoleId('condominium_admin');
+    const role = await getRoleByNameService('condominium_admin');
 
-    for (let attempt = 0; attempt < 5; attempt++) {
-        try {
-            return await db.transaction(async (tx) => {
-                const [condominium] = await tx.insert(condominiums).values({
-                    ...data, userId,
-                    shortCode: randomBytes(3).toString('hex').toUpperCase(),
-                    digitalState: 'pending',
-                }).returning();
+    return await db.transaction(async (tx) => {
+        const [condominium] = await tx.insert(condominiums).values({
+            ...data, userId,
+            digitalState: 'pending',
+        }).returning();
 
-                await tx.insert(userRoles).values({
-                    userId, condominiumId: condominium!.condominiumId,
-                    roleId: adminRoleId, isGlobal: false,
-                });
-                return condominium;
-            });
-        } catch (error: any) {
-            if ((error?.cause?.code ?? error?.code) !== '23505') throw error;
-        }
-    }
-    throw new ConflictError("Could not generate a unique code");
+        if (!condominium) throw new Error('Failed to register condominium')
+
+        await tx.insert(userRoles).values({
+            userId: userId,
+            condominiumId: condominium.condominiumId,
+            roleId: role.roleId,
+            isGlobal: false,
+        });
+
+        return processCondominiumForExport(condominium);
+    });
 }
 
 type UpdateCondominiumData = z.infer<typeof UpdateCondominiumRequest>;
@@ -110,7 +108,9 @@ export const updateCondominium = async (id: string, data: UpdateCondominiumData)
         .where(eq(condominiums.condominiumId, id))
         .returning();
 
-    return condominium;
+    if (!condominium) throw new NotFoundError('Condominium not found');
+
+    return processCondominiumForExport(condominium);
 }
 
 export const deleteCondominium = async (id: string) => {
@@ -137,7 +137,7 @@ export const approveCondominium = async (id: string, userId: string) => {
             userId: existing.userId,
             header: 'Condominio aceptado',
             body: `Tu condominio «${existing.name}» fue aceptado. Comparte el código para que tus vecinos se unan.`,
-            action: {type: 'condominium_approved', condominiumId: id, shortCode: existing.shortCode},
+            action: {type: 'condominium_approved', condominiumId: id, shortCode: existing.code},
         });
 
         return condominium;
@@ -212,7 +212,7 @@ export const deleteUnit = async (condominiumId: string, unitId: string) => {
 type JoinCondominiumData = z.infer<typeof JoinCondominiumRequest>;
 
 export const requestJoin = async (userId: string, {code, unit, unitId}: JoinCondominiumData) => {
-    const [condominium] = await db.select().from(condominiums).where(eq(condominiums.shortCode, code)).limit(1);
+    const [condominium] = await db.select().from(condominiums).where(eq(condominiums.shortCode, decodeInvitationCode(code))).limit(1);
     if (!condominium || condominium.digitalState !== 'approved') throw new NotFoundError("Invalid code");
     const condominiumId = condominium.condominiumId;
 
@@ -270,7 +270,7 @@ export const getPendingMembers = async (condominiumId: string) => {
 
 export const approveMember = async (condominiumId: string, userId: string, unitId?: string) => {
     if (unitId) await getUnitById(condominiumId, unitId);
-    const residentRoleId = await getRoleId('resident');
+    const residentRole = await getRoleByNameService('resident');
 
     await db.transaction(async (tx) => {
         const [pending] = await tx
@@ -285,7 +285,7 @@ export const approveMember = async (condominiumId: string, userId: string, unitI
         await tx.insert(condominiumMembers).values({userId, condominiumId, condominiumUnitId});
         await tx
             .insert(userRoles)
-            .values({userId, condominiumId, roleId: residentRoleId, isGlobal: false})
+            .values({userId, condominiumId, roleId: residentRole.roleId, isGlobal: false})
             .onConflictDoNothing();
     });
 }
@@ -309,4 +309,15 @@ export const removeMember = async (condominiumId: string, userId: string, adminI
             .set({deletedAt: new Date()})
             .where(and(eq(articles.lendingUser, userId), eq(articles.condominiumId, condominiumId), isNull(articles.deletedAt)));
     });
+}
+
+const processCondominiumForExport = async (condominium: CondominiumSelectType) => {
+    const textCode = encodeInvitationCode(condominium.shortCode);
+
+    const exportSafeData: CondominiumExportType = {
+        ...condominium,
+        code: textCode
+    }
+
+    return exportSafeData;
 }
