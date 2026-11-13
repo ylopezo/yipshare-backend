@@ -2,9 +2,10 @@ import {db} from "@/db/db.ts";
 import {articles, loans, reportEvidences, reports, users} from "@/db/schema.ts";
 import {alias} from "drizzle-orm/pg-core";
 import {and, desc, eq, ne, or, sql} from "drizzle-orm";
-import {ForbiddenError, NotFoundError} from "@/utils/errors";
+import {ConflictError,ForbiddenError, NotFoundError} from "@/utils/errors";
 import * as z from "zod";
 import {CreateReportRequest, UpdateReportStateRequest} from "@/schema/report.schema.ts";
+
 
 type CreateReportData = z.infer<typeof CreateReportRequest>;
 
@@ -13,6 +14,15 @@ export const createReport = async (authorId: string, {loanId, text, image}: Crea
     if (!loan) throw new NotFoundError("Loan not found");
     if (loan.lenderId !== authorId && loan.userId !== authorId)
         throw new ForbiddenError("Not part of this loan");
+    if (loan.state === 'pending') //this part will change, cuz the loan state 'rejected' is not completed, we have to put on it || loan.state === 'rejected')
+        throw new ForbiddenError("Loan has not been accepted yet");
+
+    const [existingReport] = await db
+        .select({id: reports.reportId})
+        .from(reports)
+        .where(and(eq(reports.authorId, authorId), eq(reports.loanId, loanId)))
+        .limit(1);
+    if (existingReport) throw new ConflictError("You have already reported this loan");
 
     return db.transaction(async (tx) => {
         const [report] = await tx.insert(reports).values({loanId, authorId, reportText: text}).returning();
@@ -29,7 +39,7 @@ export const getReportsAboutLoan = async (userId: string) => db.select({
 .from (reports)
 .innerJoin(loans, eq(loans.loanId, reports.loanId))
 .where(and(ne(reports.authorId, userId), or(eq(loans.userId, userId), eq(loans.lenderId, userId))))
-.orderBy(desc(reports.reportId));;
+.orderBy(desc(reports.reportId));
 
 const author = alias(users, 'author');
 const reported = alias(users, 'reported');
