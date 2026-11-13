@@ -1,8 +1,10 @@
 import {db} from "@/db/db.ts";
 import {articles, condominiumMembers, condominiums, condominiumUnits, notifications, pendingCondominiumMembers, roles, userRoles, users} from "@/db/schema.ts";
 import {and, eq, getTableColumns, isNull, ne, sql} from "drizzle-orm";
+import {alias} from "drizzle-orm/pg-core";
 import {randomBytes} from "node:crypto";
 import {ConflictError, NotFoundError} from "@/utils/errors";
+import {getRoleId} from "@/services/roles.service.ts";
 import * as z from "zod";
 import {CreateCondominiumRequest, CreateCondominiumUnitRequest, JoinCondominiumRequest, UpdateCondominiumRequest} from "@/schema/condominiums.schema.ts";
 
@@ -18,10 +20,12 @@ export const getCondominiums = async () => {
         .where(ne(condominiums.digitalState, 'deleted'));
 }
 
+const owner = alias(users, 'owner');
+
 const safeCondominiumFields = {
     condominiumId: condominiums.condominiumId,
     name: condominiums.name,
-    adminUsername: users.username,
+    adminUsername: owner.username,
 };
 
 export const getMyCondominiums = async (userId: string) => {
