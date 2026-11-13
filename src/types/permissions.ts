@@ -29,6 +29,13 @@ export const ALL_PERMS = [
     'notifications:update.markRead',
     'report:read',
     'report:update',
+    'roles:read',
+    'roles:read.all',
+    'roles.read.permissions',
+    'roles:create',
+    'roles:update',
+    'roles.update.permissions',
+    'roles:delete',
     "admin:test",
 ] as const;
 
