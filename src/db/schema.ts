@@ -164,6 +164,7 @@ export const reports = pgTable('reports', {
         'chk_report_resolution',
         sql`(${table.resolvedAt} IS NULL AND ${table.resolvedBy} IS NULL) OR (${table.resolvedAt} IS NOT NULL AND ${table.resolvedBy} IS NOT NULL)`
     ),
+    unique('uq_report_loan_author').on(table.loanId, table.authorId),
 ]);
 
 export const reportEvidences = pgTable('report_evidences', {
