@@ -1,0 +1,126 @@
+
+@loanId = LOAN_ID
+@condominiumId = CONDOMINIUM_ID
+
+### Login vecino1
+POST localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "username": "vecino1",
+  "password": "Vecino123@"
+}
+
+> {%
+    client.global.set("v1_token", response.body.token);
+%}
+
+### Login vecino2
+POST localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "username": "vecino2",
+  "password": "Vecino123@"
+}
+
+> {%
+    client.global.set("v2_token", response.body.token);
+%}
+
+### Login vecino3
+POST localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "username": "vecino3",
+  "password": "Vecino123@"
+}
+
+> {%
+    client.global.set("v3_token", response.body.token);
+%}
+
+### vecino1 califica a vecino2 -> 201
+POST localhost:3000/reviews
+Authorization: Bearer {{v1_token}}
+Content-Type: application/json
+
+{
+  "loanId": "{{loanId}}",
+  "stars": 4,
+  "comment": "Todo bien, lo devolvió a tiempo"
+}
+
+### vecino1 califica otra vez el mismo préstamo -> 409
+POST localhost:3000/reviews
+Authorization: Bearer {{v1_token}}
+Content-Type: application/json
+
+{
+  "loanId": "{{loanId}}",
+  "stars": 5
+}
+
+### vecino2 califica a vecino1 sin comentario -> 201
+POST localhost:3000/reviews
+Authorization: Bearer {{v2_token}}
+Content-Type: application/json
+
+{
+  "loanId": "{{loanId}}",
+  "stars": 5,
+  "comment": ""
+}
+
+### Estrellas fuera de rango -> 400
+POST localhost:3000/reviews
+Authorization: Bearer {{v1_token}}
+Content-Type: application/json
+
+{
+  "loanId": "{{loanId}}",
+  "stars": 6
+}
+
+### Estrellas no enteras -> 400
+POST localhost:3000/reviews
+Authorization: Bearer {{v1_token}}
+Content-Type: application/json
+
+{
+  "loanId": "{{loanId}}",
+  "stars": 3.5
+}
+
+### Préstamo inexistente -> 404
+POST localhost:3000/reviews
+Authorization: Bearer {{v1_token}}
+Content-Type: application/json
+
+{
+  "loanId": "00000000-0000-0000-0000-000000000000",
+  "stars": 3
+}
+
+### vecino3 califica un préstamo ajeno -> 403
+POST localhost:3000/reviews
+Authorization: Bearer {{v3_token}}
+Content-Type: application/json
+
+{
+  "loanId": "{{loanId}}",
+  "stars": 1
+}
+
+### vecino2 ve sus calificaciones recibidas -> [ { loanId, from: vecino1, stars: 4, comment } ]
+GET localhost:3000/reviews/me
+Authorization: Bearer {{v2_token}}
+
+### vecino3 no tiene calificaciones -> []
+GET localhost:3000/reviews/me
+Authorization: Bearer {{v3_token}}
+
+### Artículos muestran el rating del dueño -> rating: 4 en los de vecino2
+GET localhost:3000/condominiums/{{condominiumId}}/articles
+Authorization: Bearer {{v1_token}}
