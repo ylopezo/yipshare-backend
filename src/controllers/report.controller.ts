@@ -1,7 +1,7 @@
 import type {Response, NextFunction} from "express";
 import type {AuthorizedRequest} from "@/middlewares/authorization.middleware.ts";
 import {CreateReportRequest, ReportParams, UpdateReportStateRequest} from "@/schema/report.schema.ts";
-import {CondominiumIdParams} from "@/schema/condominium.schema.ts";
+import {CondominiumIdParams} from "@/schema/condominiums.schema.ts";
 import {createReport, getReportsAboutLoan, getCondominiumReports, updateReportState} from "@/services/report.service.ts";
 
 export const postReport = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {

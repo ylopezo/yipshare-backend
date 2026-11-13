@@ -24,6 +24,7 @@ router.delete('/me', authenticationHandler, withPermissions('users:delete.self')
 router.get('/me/notifications', authenticationHandler, withPermissions('users:read.notifications'), withAuthz(getNotificationsSelf));
 router.get('/me/notifications/:id', authenticationHandler, withPermissions('users:read.notifications'), withAuthz(getNotificationSelf));
 router.delete('/me/notifications/:id', authenticationHandler, withPermissions('users:delete.notifications'), withAuthz(deleteNotification));
+router.delete('/me/notifications/:id/read', authenticationHandler, withPermissions('users:update.notifications.markRead'), withAuthz(deleteNotification));
 
 export default router;
 
