@@ -1,10 +1,9 @@
 import express from 'express';
 import errorHandler from "@/middlewares/error.middleware.ts";
 import authRoutes from "@/routes/auth.routes.ts";
-import condominiumRoutes from "@/routes/condominium.routes.ts";
+import condominiumRoutes from "@/routes/condominiums.routes.ts";
 import reportRoutes from "@/routes/report.routes.ts";
 import articleRoutes from "@/routes/article.routes.ts";
-import {postCondominium} from "@/controllers/condominium.controller.ts";
 import usersRoutes from "@/routes/users.routes.ts";
 import router from "@/routes/auth.routes.ts";
 import notificationsRoutes from "@/routes/notifications.routes.ts";
@@ -25,9 +24,8 @@ app.use((req, res, next) => {
 app.use(express.json())
 app.use('/auth', authRoutes);
 app.use('/condominiums', condominiumRoutes);
-app.use('/reports', reportRoutes);
-app.use('/condominiums', articleRoutes);
 app.use('/users', usersRoutes);
 app.use('/notifications', notificationsRoutes);
-
+app.use('/reports', reportRoutes);
+app.use('/condominiums', articleRoutes);
 app.use(errorHandler);

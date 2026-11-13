@@ -1,6 +1,6 @@
 import {type Request, type Response, type NextFunction} from "express";
-import {getCondominiums, getMyCondominiums, getCondominiumById, rejectCondominium, getUnitsByCondominium, createCondominium, updateCondominium, deleteCondominium, approveCondominium, getUnitById, createUnit, updateUnit, deleteUnit, requestJoin, getMembers, getPendingMembers, approveMember, removeMember} from "@/services/condominium.service.ts";
-import {CondominiumIdParams, CondominiumUnitParams, CreateCondominiumRequest, CreateCondominiumUnitRequest, UpdateCondominiumRequest, UpdateCondominiumUnitRequest, JoinCondominiumRequest, MemberParams, ApproveMemberRequest} from "@/schema/condominium.schema.ts";
+import {getCondominiums, getMyCondominiums, getCondominiumById, rejectCondominium, getUnitsByCondominium, createCondominium, updateCondominium, deleteCondominium, approveCondominium, getUnitById, createUnit, updateUnit, deleteUnit, requestJoin, getMembers, getPendingMembers, approveMember, removeMember} from "@/services/condominiums.service.ts";
+import {CondominiumIdParams, CondominiumUnitParams, CreateCondominiumRequest, CreateCondominiumUnitRequest, UpdateCondominiumRequest, UpdateCondominiumUnitRequest, JoinCondominiumRequest, MemberParams, ApproveMemberRequest} from "@/schema/condominiums.schema.ts";
 import type {AuthorizedRequest} from "@/middlewares/authorization.middleware.ts";
 
 export const getListOfCondominiums = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
