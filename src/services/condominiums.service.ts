@@ -1,11 +1,10 @@
 import {db} from "@/db/db.ts";
 import {articles, condominiumMembers, condominiums, condominiumUnits, notifications, pendingCondominiumMembers, roles, userRoles, users} from "@/db/schema.ts";
 import {and, eq, getTableColumns, isNull, ne, sql} from "drizzle-orm";
-import {alias} from "drizzle-orm/pg-core";
 import {randomBytes} from "node:crypto";
 import {ConflictError, NotFoundError} from "@/utils/errors";
 import * as z from "zod";
-import {CreateCondominiumRequest, CreateCondominiumUnitRequest, JoinCondominiumRequest, UpdateCondominiumRequest} from "@/schema/condominium.schema.ts";
+import {CreateCondominiumRequest, CreateCondominiumUnitRequest, JoinCondominiumRequest, UpdateCondominiumRequest} from "@/schema/condominiums.schema.ts";
 
 export const getCondominiums = async () => {
     return db
@@ -19,16 +18,15 @@ export const getCondominiums = async () => {
         .where(ne(condominiums.digitalState, 'deleted'));
 }
 
-const owner = alias(users, 'owner');
-const myCondominiumFields = {
+const safeCondominiumFields = {
     condominiumId: condominiums.condominiumId,
     name: condominiums.name,
-    adminUsername: owner.username,
+    adminUsername: users.username,
 };
 
 export const getMyCondominiums = async (userId: string) => {
     const [registered, joined] = await Promise.all([
-        db.selectDistinct(myCondominiumFields)
+        db.selectDistinct(safeCondominiumFields)
             .from(userRoles)
             .innerJoin(roles, eq(roles.roleId, userRoles.roleId))
             .innerJoin(condominiums, eq(condominiums.condominiumId, userRoles.condominiumId))
@@ -38,7 +36,7 @@ export const getMyCondominiums = async (userId: string) => {
                 eq(roles.name, 'condominium_admin'),
                 eq(condominiums.digitalState, 'approved'),
             )),
-        db.selectDistinct(myCondominiumFields)
+        db.selectDistinct(safeCondominiumFields)
             .from(condominiumMembers)
             .innerJoin(condominiums, eq(condominiums.condominiumId, condominiumMembers.condominiumId))
             .innerJoin(owner, eq(owner.userId, condominiums.userId))
@@ -68,12 +66,6 @@ export const getUnitsByCondominium = async (id: string) => {
         .select()
         .from(condominiumUnits)
         .where(eq(condominiumUnits.condominiumId, id));
-}
-
-const getRoleId = async (name: string) => {
-    const [role] = await db.select().from(roles).where(eq(roles.name, name)).limit(1);
-    if (!role) throw new Error(`Role '${name}' missing, run bun run db:seed`);
-    return role.roleId;
 }
 
 type CreateCondominiumData = z.infer<typeof CreateCondominiumRequest>;
@@ -208,7 +200,6 @@ export const deleteUnit = async (condominiumId: string, unitId: string) => {
     try {
         await db.delete(condominiumUnits).where(eq(condominiumUnits.condominiumUnitId, unitId));
     } catch (error: any) {
-        // 23503 = FK violation: unit still has members or pending requests
         if ((error?.cause?.code ?? error?.code) === '23503') throw new ConflictError("Unit has members assigned");
         throw error;
     }
