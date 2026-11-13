@@ -144,10 +144,13 @@ export const reviews = pgTable('reviews', {
     loanId: uuid('loan_id')
         .notNull()
         .references(() => loans.loanId),
+    reviewerId: uuid('reviewer_id').notNull().references(() => users.userId),
+    reviewedId: uuid('reviewed_id').notNull().references(() => users.userId),
     reviewText: text('review_text').notNull(),
     rating: smallint('rating').notNull(),
 }, (table) => [
-    check('chk_review_rating_range', sql`${table.rating} BETWEEN 1 AND 50`),
+    check('chk_review_rating_range', sql`${table.rating} BETWEEN 1 AND 5`),
+    unique ('uq_review_loan_author').on(table.loanId, table.reviewerId),
 ]);
 
 export const reports = pgTable('reports', {

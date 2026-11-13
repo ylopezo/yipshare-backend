@@ -1,6 +1,6 @@
 import {db} from "@/db/db.ts";
 import {articleCategories, articles, categories, condominiumMembers, roles, userRoles, users} from "@/db/schema.ts";
-import {and, desc, eq, ilike, isNull} from "drizzle-orm";
+import {and, desc, eq, ilike, isNull, sql} from "drizzle-orm";
 import {ConflictError, ForbiddenError, NotFoundError} from "@/utils/errors";
 import * as z from "zod";
 import {ArticleRequest} from "@/schema/article.schema.ts";
@@ -56,6 +56,7 @@ export const listArticles = async (userId: string, condominiumId: string, q: str
         maximumLendTime: articles.maximumLendTime,
         ownerId: articles.lendingUser,
         owner: users.username,
+        rating: sql<number>`${users.computedRating}::float8 / 10`,
         category: categories.name,
     })
         .from(articles)
