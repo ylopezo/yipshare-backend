@@ -21,7 +21,7 @@ export const userStateEnum = pgEnum('user_state', ['active', 'suspended', 'delet
 export const condominiumStateEnum = pgEnum('condominium_state', ['approved', 'pending', 'suspended', 'deleted']);
 export const articleStateEnum = pgEnum('article_state', ['excellent', 'good', 'medium', 'bad']);
 export const articleAvailabilityEnum = pgEnum('article_availability', ['available', 'not_available', 'pending']);
-export const loanStateEnum = pgEnum('loan_state', ['accepted', 'pending', 'returned']);
+export const loanStateEnum = pgEnum('loan_state', ['accepted', 'pending', 'returned', 'rejected']);
 export const reportStateEnum = pgEnum('report_state', ['pending', 'in_review', 'resolved']);
 
 export const roles = pgTable('roles', {

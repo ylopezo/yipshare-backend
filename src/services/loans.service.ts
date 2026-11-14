@@ -1,7 +1,7 @@
 import {db} from "@/db/db.ts";
 import {z} from "zod";
 import type {LoanRequest} from "@/schema/loans.schema.ts";
-import {loans} from "@/db/schema.ts";
+import {articles, loans} from "@/db/schema.ts";
 import {BadRequestError, ConflictError, NotFoundError} from "@/utils/errors";
 import {and, eq, or, gt} from "drizzle-orm";
 import {generateVerificationCodeUtil, normalizeCode} from "@/utils/verificaton_code.util.ts";
@@ -38,6 +38,10 @@ export const getAllLoansFromUserService = async (userId: string) => {
     return await db.select(safeLoanFields).from(loans).where(eq(loans.userId, userId));
 };
 
+export const getAllLoansFromCondominium = async (condominiumId: string) => {
+    return await db.select(safeLoanFields).from(loans).innerJoin(articles,eq(loans.articleId, articles.articleId)).where(eq(articles.condominiumId, condominiumId));
+};
+
 export const getLoanFromIdService = async (loanId: string) => {
     const [loan] = await db.select(safeLoanFields).from(loans).where(eq(loans.loanId, loanId));
     if (!loan) throw new NotFoundError('Loan not found.');
@@ -52,15 +56,16 @@ export const getLoanFromIdSelfService = async (userId: string, loanId: string) =
 }
 
 type AllowedStartState = 'accepted' | 'pending';
-type AllowedEndState = 'accepted' | 'returned';
+type AllowedEndState = 'accepted' | 'returned' | 'rejected';
 
-const VALID_TRANSITIONS: Record<AllowedStartState, AllowedEndState> = {
-    pending: 'accepted',
-    accepted: 'returned',
-};
+function transitionValid(startState: AllowedStartState, endState: AllowedEndState) {
+    if (startState === 'pending' && (endState === 'accepted' || endState === 'rejected')) return true;
+    else if (startState === 'accepted' && endState === 'returned') return true;
+    return false;
+}
 
 export const generateVerificationCodeService = async (userId: string, loanId: string) => {
-    const [loanCheck] = await db.select().from(loans).where(and(eq(loans.userId, userId), eq(loans.loanId, loanId)))
+    const [loanCheck] = await db.select().from(loans).where(and(eq(loans.lenderId, userId), eq(loans.loanId, loanId)))
 
     if (!loanCheck) throw new NotFoundError('Loan not found.');
     if (loanCheck.state === 'returned') throw new ConflictError('Loan is already returned.');
@@ -91,7 +96,7 @@ export const stateChangeLoanService = async (userId: string, loanId: string, exp
         throw new ConflictError(`Loan is not in state ${expectedStartState}`);
     }
 
-    if (VALID_TRANSITIONS[expectedStartState] !== endState) {
+    if (transitionValid(expectedStartState, endState)) {
         throw new BadRequestError(`Invalid transition from ${expectedStartState} to ${endState}.`);
     }
 
