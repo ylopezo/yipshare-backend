@@ -1,8 +1,8 @@
 import type {Response, NextFunction} from "express";
 import type {AuthorizedRequest} from "@/middlewares/authorization.middleware.ts";
-import {ArticleParams, ArticleQuery, ArticleRequest} from "@/schema/article.schema.ts";
+import {ArticleParams, ArticleQuery, ArticleRequest} from "@/schema/articles.schema.ts";
 import {CondominiumIdParams} from "@/schema/condominiums.schema.ts";
-import {listArticles, createArticle, updateArticle, deleteArticle} from "@/services/article.service.ts";
+import {listArticles, createArticle, updateArticle, deleteArticle} from "@/services/articles.service.ts";
 
 export const getArticles = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {

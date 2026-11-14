@@ -3,18 +3,20 @@ import {loans, reviews, users} from "@/db/schema.ts";
 import {and, desc, eq, sql} from "drizzle-orm";
 import {ConflictError, ForbiddenError, NotFoundError} from "@/utils/errors";
 import * as z from "zod";
-import {CreateReviewRequest} from "@/schema/review.schema.ts";
+import {CreateReviewRequest} from "@/schema/reviews.schema.ts";
 
 type CreateReviewData = z.infer<typeof CreateReviewRequest>;
 
 export const createReview = async (authorId: string, {loanId, stars, comment}: CreateReviewData) => {
     const [loan] = await db.select().from(loans).where(eq(loans.loanId, loanId)).limit(1);
+
     if (!loan) throw new NotFoundError("Loan not found");
+
     if (loan.lenderId !== authorId && loan.userId !== authorId)
-        throw new ForbiddenError("Not part of this loan");
-    //método falta cuando el enum tenga finished
-    //if (loan.state !== 'completed')
-      //  throw new ForbiddenError("Loan has not been completed yet");
+        throw new ForbiddenError("Not part of this loan")
+
+    if (loan.state !== 'returned')
+       throw new ForbiddenError("Loan item has not been returned yet");
 
     const [existingReview] = await db
         .select({id: reviews.reviewId})

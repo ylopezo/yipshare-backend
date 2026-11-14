@@ -135,8 +135,10 @@ export const loans = pgTable('loans', {
         .notNull()
         .references(() => articles.articleId),
     requestText: text('request_text').notNull(),
-    confirmationCode: integer('confirmation_code'),
+    confirmationCode: text('confirmation_code'),
+    confirmationCodeExpiry: timestamp('confirmation_code_expiry'),
     state: loanStateEnum('state').notNull().default('pending'),
+    confirmationTime: timestamp('confirmation_time', { withTimezone: true }),
     returnTime: timestamp('return_time', { withTimezone: true }),
 });
 

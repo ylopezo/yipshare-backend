@@ -22,7 +22,7 @@ import {
 import {authenticationHandler} from "@/middlewares/authentication.middleware.ts";
 import {withAuthz, withPermissions} from "@/middlewares/authorization.middleware.ts";
 import {getIdFromParams} from "@/middlewares/condominiumGetter.middleware.ts";
-import {getReportsOfCondominium, patchReportState} from "@/controllers/report.controller.ts";
+import {getReportsOfCondominium, patchReportState} from "@/controllers/reports.controller.ts";
 
 const router = Router();
 

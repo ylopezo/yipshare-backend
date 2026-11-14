@@ -1,7 +1,7 @@
 import type {Response, NextFunction} from "express";
 import type {AuthorizedRequest} from "@/middlewares/authorization.middleware.ts";
-import {CreateReviewRequest} from "@/schema/review.schema.ts";
-import {createReview, getReceivedReviews} from "@/services/review.service.ts";
+import {CreateReviewRequest} from "@/schema/reviews.schema.ts";
+import {createReview, getReceivedReviews} from "@/services/reviews.service.ts";
 
 export const postReview = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {

@@ -4,6 +4,7 @@ import type {AuthenticatedRequest} from "@/middlewares/authentication.middleware
 import {db} from "@/db/db.ts";
 import {permissionOverrides, permissions, rolePermissions, userRoles} from "@/db/schema.ts";
 import {and, eq, isNull, or} from "drizzle-orm";
+import {ForbiddenError, UnauthorizedError} from "@/utils/errors";
 
 export interface AuthorizedRequest extends AuthenticatedRequest {
     permissions: Set<string>;
@@ -21,12 +22,10 @@ export const withPermissions = (...requiredPermissions: [Permission, ...Permissi
     const permissionSet = new Set(requiredPermissions);
     return async (req, res, next) => {
         try {
-            const authReq = req as AuthenticatedRequest;
-            const userId = authReq.session.userId;
+            const userId = req.session?.userId;
 
             if (!userId) {
-                res.status(401).json({message: 'Unauthorized'});
-                return;
+                throw new UnauthorizedError();
             }
 
             const condominiumId = req.condominiumId ?? null;
@@ -37,7 +36,7 @@ export const withPermissions = (...requiredPermissions: [Permission, ...Permissi
                 req.permissions = resolvedUserPermissions;
                 next()
             } else {
-                res.status(403).json({message: 'Forbidden'});
+                throw new ForbiddenError();
             }
         } catch (error) {
             next(error);
