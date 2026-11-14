@@ -19,14 +19,6 @@ const isCondominiumAdmin = async (userId: string, condominiumId: string) => {
     return Boolean(row);
 };
 
-const ensureAccess = async (userId: string, condominiumId: string) => {
-    const [member] = await db.select({userId: condominiumMembers.userId}).from(condominiumMembers)
-        .where(and(eq(condominiumMembers.userId, userId), eq(condominiumMembers.condominiumId, condominiumId)))
-        .limit(1);
-    if (!member && !(await isCondominiumAdmin(userId, condominiumId)))
-        throw new ForbiddenError("Not a member of this condominium");
-};
-
 const findCategoryId = async (name: string) => {
     const [category] = await db.select().from(categories).where(eq(categories.name, name)).limit(1);
     if (!category) throw new NotFoundError("Category not found");
@@ -46,7 +38,6 @@ const findArticle = async (condominiumId: string, articleId: string) => {
 };
 
 export const listArticles = async (userId: string, condominiumId: string, q: string) => {
-    await ensureAccess(userId, condominiumId);
     return db.select({
         articleId: articles.articleId,
         name: articles.name,
@@ -72,7 +63,6 @@ export const listArticles = async (userId: string, condominiumId: string, q: str
 };
 
 export const createArticle = async (userId: string, condominiumId: string, {category, ...data}: ArticleData) => {
-    await ensureAccess(userId, condominiumId);
     const categoryId = await findCategoryId(category);
 
     return db.transaction(async (tx) => {
