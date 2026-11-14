@@ -46,6 +46,7 @@ router.post('/:id/members/:userId/approve', authenticationHandler, getIdFromPara
 router.delete('/:id/members/:userId', authenticationHandler, getIdFromParams('id'), withPermissions('condominium:delete.members'), withAuthz(removeCondominiumMember));
 router.get('/:id/reports', authenticationHandler, getIdFromParams('id'), withPermissions('report:read'), withAuthz(getReportsOfCondominium));
 router.patch('/:id/reports/:reportId', authenticationHandler, getIdFromParams('id'), withPermissions('report:update'), withAuthz(patchReportState));
+router.get('/:id/loans', authenticationHandler, getIdFromParams('id'), withPermissions('condominium:read.loans.all'))
 
 export default router;
 
