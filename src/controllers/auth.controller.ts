@@ -49,16 +49,6 @@ export const logout = async (req: AuthenticatedRequest, res: Response, next: Nex
     }
 }
 
-export const testPerm = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
-    try {
-        res.status(200).json({
-            message: '🥹🥹🥹🥹🥹🥹🥹🥹'
-        });
-    } catch (e) {
-        next(e)
-    }
-}
-
 export const me = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
         res.status(200).json(await profileService(req.session.userId));

@@ -4,7 +4,7 @@ import {alias} from "drizzle-orm/pg-core";
 import {and, desc, eq, ne, or, sql} from "drizzle-orm";
 import {ConflictError,ForbiddenError, NotFoundError} from "@/utils/errors";
 import * as z from "zod";
-import {CreateReportRequest, UpdateReportStateRequest} from "@/schema/report.schema.ts";
+import {CreateReportRequest, UpdateReportStateRequest} from "@/schema/reports.schema.ts";
 
 
 type CreateReportData = z.infer<typeof CreateReportRequest>;
