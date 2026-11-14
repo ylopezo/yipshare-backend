@@ -6,7 +6,7 @@ import * as z from "zod";
 import {CreateCondominiumRequest, CreateCondominiumUnitRequest, JoinCondominiumRequest, UpdateCondominiumRequest} from "@/schema/condominiums.schema.ts";
 import {getRoleByNameService} from "@/services/roles.service.ts";
 import type {CondominiumExportType, CondominiumSelectType} from "@/types/db/schema";
-import {decodeInvitationCode, encodeInvitationCode} from "@/utils/code_scrambling.util.ts";
+import {decodeInvCode, encodeInvCode} from "@/utils/sqids.util.ts";
 
 export const getCondominiums = async () => {
     return db
@@ -209,7 +209,7 @@ export const deleteUnit = async (condominiumId: string, unitId: string) => {
 type JoinCondominiumData = z.infer<typeof JoinCondominiumRequest>;
 
 export const requestJoin = async (userId: string, {code, unit, unitId}: JoinCondominiumData) => {
-    const [condominium] = await db.select().from(condominiums).where(eq(condominiums.shortCode, decodeInvitationCode(code))).limit(1);
+    const [condominium] = await db.select().from(condominiums).where(eq(condominiums.shortCode, decodeInvCode(code))).limit(1);
     if (!condominium || condominium.digitalState !== 'approved') throw new NotFoundError("Invalid code");
     const condominiumId = condominium.condominiumId;
 
@@ -309,7 +309,7 @@ export const removeMember = async (condominiumId: string, userId: string, adminI
 }
 
 const processCondominiumForExport = async (condominium: CondominiumSelectType) => {
-    const textCode = encodeInvitationCode(condominium.shortCode);
+    const textCode = encodeInvCode(condominium.shortCode);
 
     const exportSafeData: CondominiumExportType = {
         ...condominium,
