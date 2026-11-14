@@ -2,11 +2,12 @@ import type {AuthorizedRequest} from "@/middlewares/authorization.middleware.ts"
 import type {NextFunction, Response} from "express";
 import {LoanQueryRequest, LoanRequest, VerificationCodeBody} from "@/schema/loans.schema.ts";
 import {
-    createLoanService, generateVerificationCodeService,
+    createLoanService, generateVerificationCodeService, getAllLoansFromCondominium,
     getAllLoansService, getLoanFromIdSelfService, getLoanFromIdService, stateChangeLoanService
 } from "@/services/loans.service.ts";
 import {LoanLenderRequest, LoanUserRequest} from "@/schema/loans.schema.ts";
 import {getAllLoansFromLenderService, getAllLoansFromUserService} from "@/services/loans.service.ts";
+import {CondominiumIdParams} from "@/schema/condominiums.schema.ts";
 
 export const createLoan = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
@@ -20,6 +21,15 @@ export const createLoan = async (req: AuthorizedRequest, res: Response, next: Ne
 export const getLoans = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
         return res.status(200).json(await getAllLoansService());
+    } catch (error) {
+        next(error);
+    }
+}
+
+export const getLoansFromCondominium = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
+    try {
+        const {id} = CondominiumIdParams.parse(req.params);
+        return res.status(200).json(await getAllLoansFromCondominium(id));
     } catch (error) {
         next(error);
     }
