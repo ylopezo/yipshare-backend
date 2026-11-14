@@ -15,7 +15,7 @@ router.post('/', authenticationHandler, withPermissions('users:create.loans'), w
 router.get('/me', authenticationHandler, withPermissions('users:read.loans.all'), withAuthz(getLoansFromUser));
 router.get('/me/lent', authenticationHandler, withPermissions('users:read.loans.all'), withAuthz(getLoansFromLender));
 router.get('/me/:id', authenticationHandler, withPermissions('users:read.loans'), withAuthz(getLoanFromIdUser));
-router.post('/me/:id/verification-code', withPermissions('users:update.loans.verificationCode'), authenticationHandler, withAuthz(generateVerificationCode));
+router.post('/me/:id/verification-code', authenticationHandler, withPermissions('users:update.loans.verificationCode'),  withAuthz(generateVerificationCode));
 router.patch('/me/:id/accept', authenticationHandler, withPermissions('users:update.loans.accept'), withAuthz(markAccepted));
 router.patch('/me/:id/return', authenticationHandler, withPermissions('users:update.loans.return'), withAuthz(markReturned));
 
