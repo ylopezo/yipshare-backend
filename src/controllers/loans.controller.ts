@@ -90,3 +90,12 @@ export const markReturned = async (req: AuthorizedRequest, res: Response, next: 
         next(error);
     }
 }
+export const markRejected = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
+    try {
+        const data = LoanQueryRequest.parse(req.params);
+        const body = VerificationCodeBody.parse(req.body);
+        return res.status(200).json(await stateChangeLoanService(req.session.userId, data.id, 'accepted', 'rejected', body.code));
+    } catch (error) {
+        next(error);
+    }
+}
