@@ -1,7 +1,7 @@
 import {db} from "@/db/db.ts";
 import {z} from "zod";
 import type {LoanRequest} from "@/schema/loans.schema.ts";
-import {loans} from "@/db/schema.ts";
+import {articles, loans} from "@/db/schema.ts";
 import {BadRequestError, ConflictError, NotFoundError} from "@/utils/errors";
 import {and, eq, or, gt} from "drizzle-orm";
 import {generateVerificationCodeUtil, normalizeCode} from "@/utils/verificaton_code.util.ts";
@@ -36,6 +36,10 @@ export const getAllLoansFromLenderService = async (lenderId: string) => {
 
 export const getAllLoansFromUserService = async (userId: string) => {
     return await db.select(safeLoanFields).from(loans).where(eq(loans.userId, userId));
+};
+
+export const getAllLoansFromCondominium = async (condominiumId: string) => {
+    return await db.select(safeLoanFields).from(loans).innerJoin(articles,eq(loans.articleId, articles.articleId)).where(eq(articles.condominiumId, condominiumId));
 };
 
 export const getLoanFromIdService = async (loanId: string) => {
