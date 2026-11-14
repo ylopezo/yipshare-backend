@@ -52,15 +52,16 @@ export const getLoanFromIdSelfService = async (userId: string, loanId: string) =
 }
 
 type AllowedStartState = 'accepted' | 'pending';
-type AllowedEndState = 'accepted' | 'returned';
+type AllowedEndState = 'accepted' | 'returned' | 'rejected';
 
-const VALID_TRANSITIONS: Record<AllowedStartState, AllowedEndState> = {
-    pending: 'accepted',
-    accepted: 'returned',
-};
+function transitionValid(startState: AllowedStartState, endState: AllowedEndState) {
+    if (startState === 'pending' && (endState === 'accepted' || endState === 'rejected')) return true;
+    else if (startState === 'accepted' && endState === 'returned') return true;
+    return false;
+}
 
 export const generateVerificationCodeService = async (userId: string, loanId: string) => {
-    const [loanCheck] = await db.select().from(loans).where(and(eq(loans.userId, userId), eq(loans.loanId, loanId)))
+    const [loanCheck] = await db.select().from(loans).where(and(eq(loans.lenderId, userId), eq(loans.loanId, loanId)))
 
     if (!loanCheck) throw new NotFoundError('Loan not found.');
     if (loanCheck.state === 'returned') throw new ConflictError('Loan is already returned.');
@@ -91,7 +92,7 @@ export const stateChangeLoanService = async (userId: string, loanId: string, exp
         throw new ConflictError(`Loan is not in state ${expectedStartState}`);
     }
 
-    if (VALID_TRANSITIONS[expectedStartState] !== endState) {
+    if (transitionValid(expectedStartState, endState)) {
         throw new BadRequestError(`Invalid transition from ${expectedStartState} to ${endState}.`);
     }
 
