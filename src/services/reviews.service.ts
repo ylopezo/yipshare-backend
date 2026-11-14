@@ -3,7 +3,9 @@ import {loans, reviews, users} from "@/db/schema.ts";
 import {and, desc, eq, sql} from "drizzle-orm";
 import {ConflictError, ForbiddenError, NotFoundError} from "@/utils/errors";
 import * as z from "zod";
-import {CreateReviewRequest} from "@/schema/reviews.schema.ts";
+import {CondominiumReviewQuery, CreateReviewRequest} from "@/schema/reviews.schema.ts";
+import {articles} from "@/db/schema.ts";
+import {alias} from "drizzle-orm/pg-core";
 
 type CreateReviewData = z.infer<typeof CreateReviewRequest>;
 
@@ -47,4 +49,34 @@ export const getReceivedReviews = async (userId: string) => db.select({
     .from(reviews)
     .innerJoin(users, eq(reviews.reviewerId, users.userId))
     .where(eq(reviews.reviewedId, userId))
+    .orderBy(desc(reviews.reviewId));
+
+
+const reviewer = alias(users, 'reviewer');
+const reviewed = alias(users, 'reviewed');
+
+type ReviewsFilter = z.infer<typeof CondominiumReviewQuery>;
+
+export const getCondominiumReviews = async (condominiumId: string, {userId, as}: ReviewsFilter) => db
+    .select({
+        reviewId: reviews.reviewId,
+        loanId: reviews.loanId,
+        article: articles.name,
+        from: reviewer.username,
+        to: reviewed.username,
+        as: sql<'lender' | 'borrower'>`CASE WHEN ${reviews.reviewedId} = ${loans.lenderId} THEN 'lender' ELSE 'borrower' END`,
+        stars: reviews.rating,
+        comment: reviews.reviewText,
+    })
+    .from(reviews)
+    .innerJoin(loans, eq(loans.loanId, reviews.loanId))
+    .innerJoin(articles, eq(articles.articleId, loans.articleId))
+    .innerJoin(reviewer, eq(reviewer.userId, reviews.reviewerId))
+    .innerJoin(reviewed, eq(reviewed.userId, reviews.reviewedId))
+    .where(and(
+        eq(articles.condominiumId, condominiumId),
+        userId ? eq(reviews.reviewedId, userId) : undefined,
+        as === 'lender' ? eq(reviews.reviewedId, loans.lenderId) : undefined,
+        as === 'borrower' ? eq(reviews.reviewedId, loans.userId) : undefined,
+    ))
     .orderBy(desc(reviews.reviewId));

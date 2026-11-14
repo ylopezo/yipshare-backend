@@ -23,6 +23,7 @@ import {authenticationHandler} from "@/middlewares/authentication.middleware.ts"
 import {withAuthz, withPermissions} from "@/middlewares/authorization.middleware.ts";
 import {getIdFromParams} from "@/middlewares/condominiumGetter.middleware.ts";
 import {getReportsOfCondominium, patchReportState} from "@/controllers/reports.controller.ts";
+import {getReviewsOfCondominium} from "@/controllers/reviews.controller.ts";
 
 const router = Router();
 
@@ -46,6 +47,7 @@ router.post('/:id/members/:userId/approve', authenticationHandler, getIdFromPara
 router.delete('/:id/members/:userId', authenticationHandler, getIdFromParams('id'), withPermissions('condominium:delete.members'), withAuthz(removeCondominiumMember));
 router.get('/:id/reports', authenticationHandler, getIdFromParams('id'), withPermissions('report:read'), withAuthz(getReportsOfCondominium));
 router.patch('/:id/reports/:reportId', authenticationHandler, getIdFromParams('id'), withPermissions('report:update'), withAuthz(patchReportState));
+router.get('/:id/reviews', authenticationHandler, getIdFromParams('id'), withPermissions('condominium:read.articles'), withAuthz(getReviewsOfCondominium));
 
 export default router;
 

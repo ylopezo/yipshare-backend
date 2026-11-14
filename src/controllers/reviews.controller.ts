@@ -1,7 +1,10 @@
 import type {Response, NextFunction} from "express";
 import type {AuthorizedRequest} from "@/middlewares/authorization.middleware.ts";
-import {CreateReviewRequest} from "@/schema/reviews.schema.ts";
-import {createReview, getReceivedReviews} from "@/services/reviews.service.ts";
+import {CondominiumReviewQuery, CreateReviewRequest} from "@/schema/reviews.schema.ts";
+import {createReview, getCondominiumReviews, getReceivedReviews} from "@/services/reviews.service.ts";
+import {CondominiumIdParams} from "@/schema/condominiums.schema.ts";
+
+
 
 export const postReview = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
@@ -15,6 +18,16 @@ export const postReview = async (req: AuthorizedRequest, res: Response, next: Ne
 export const getMyReviews = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
         return res.status(200).json(await getReceivedReviews(req.session.userId));
+    } catch (error) {
+        next(error);
+    }
+}
+
+export const getReviewsOfCondominium = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
+    try {
+        const {id} = CondominiumIdParams.parse(req.params);
+        const filter = CondominiumReviewQuery.parse(req.query);
+        return res.status(200).json(await getCondominiumReviews(id, filter));
     } catch (error) {
         next(error);
     }
