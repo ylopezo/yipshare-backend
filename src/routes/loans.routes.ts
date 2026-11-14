@@ -6,7 +6,7 @@ import {
     generateVerificationCode, getLoanFromId,
     getLoanFromIdUser, getLoans,
     getLoansFromLender,
-    getLoansFromUser, markAccepted, markReturned
+    getLoansFromUser, markAccepted, markRejected, markReturned
 } from "@/controllers/loans.controller.ts";
 
 const router = Router();
@@ -18,6 +18,7 @@ router.get('/me/:id', authenticationHandler, withPermissions('users:read.loans')
 router.post('/me/:id/verification-code', authenticationHandler, withPermissions('users:update.loans.verificationCode'),  withAuthz(generateVerificationCode));
 router.patch('/me/:id/accept', authenticationHandler, withPermissions('users:update.loans.accept'), withAuthz(markAccepted));
 router.patch('/me/:id/return', authenticationHandler, withPermissions('users:update.loans.return'), withAuthz(markReturned));
+router.patch('/me/:id/reject', authenticationHandler, withPermissions('users:update.loans.return'), withAuthz(markRejected));
 
 router.get('/', authenticationHandler, withPermissions('loans:read.all'), withAuthz(getLoans));
 router.get('/:id', authenticationHandler, withPermissions('loans:read'), withAuthz(getLoanFromId));
