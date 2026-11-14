@@ -4,8 +4,8 @@ import {
     createNotificationService,
     deleteNotificationService,
     getNotificationsService, markNotificationAsRead, markNotificationAsReadSelf
-} from "@/services/notification.service.ts";
-import {getNotificationService} from "@/services/notification.service.ts";
+} from "@/services/notifications.service.ts";
+import {getNotificationService} from "@/services/notifications.service.ts";
 import {NotificationCreate, NotificationFetchIdParams} from "@/schema/notifications.schema.ts";
 import {UserIdParams} from "@/schema/users.schema.ts";
 

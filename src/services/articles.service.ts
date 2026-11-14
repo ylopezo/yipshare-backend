@@ -3,7 +3,7 @@ import {articleCategories, articles, categories, condominiumMembers, roles, user
 import {and, desc, eq, ilike, isNull, sql} from "drizzle-orm";
 import {ConflictError, ForbiddenError, NotFoundError} from "@/utils/errors";
 import * as z from "zod";
-import {ArticleRequest} from "@/schema/article.schema.ts";
+import {ArticleRequest} from "@/schema/articles.schema.ts";
 
 type ArticleData = z.infer<typeof ArticleRequest>;
 
@@ -101,7 +101,7 @@ export const updateArticle = async (userId: string, condominiumId: string, artic
     });
 };
 
-export const deleteArticle = async (userId: string, condominiumId: string, articleId: string) => {
+export const  deleteArticle = async (userId: string, condominiumId: string, articleId: string) => {
     const stored = await findArticle(condominiumId, articleId);
 
     if (stored.lendingUser === userId) {

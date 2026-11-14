@@ -19,7 +19,12 @@ export function encodeInvCode(code: number): string {
 }
 
 export function decodeInvCode(code: string): number {
-    const unformattedCode = code.replaceAll('-', '')
+    const unformattedCode = code
+        .toUpperCase()
+        .replaceAll('-', '')
+        .replaceAll('I', 'L')
+        .replaceAll('1', 'L')
+
     const potentialCode = sqids.decode(unformattedCode);
     if (potentialCode.length !== 1 || sqids.encode(potentialCode) != unformattedCode) throw new NotFoundError('Resource not found')
     return potentialCode[0]!;

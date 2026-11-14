@@ -11,7 +11,7 @@ import {RegisterRequest} from "@/schema/auth.schema.ts";
 import {
     getNotificationServiceUserFiltered,
     getNotificationsService, markNotificationAsRead, markNotificationAsReadSelf,
-} from "@/services/notification.service.ts";
+} from "@/services/notifications.service.ts";
 import {NotificationFetchIdParams} from "@/schema/notifications.schema.ts";
 
 export const getListOfUsers = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
