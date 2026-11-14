@@ -21,7 +21,7 @@ export const userStateEnum = pgEnum('user_state', ['active', 'suspended', 'delet
 export const condominiumStateEnum = pgEnum('condominium_state', ['approved', 'pending', 'suspended', 'deleted']);
 export const articleStateEnum = pgEnum('article_state', ['excellent', 'good', 'medium', 'bad']);
 export const articleAvailabilityEnum = pgEnum('article_availability', ['available', 'not_available', 'pending']);
-export const loanStateEnum = pgEnum('loan_state', ['accepted', 'pending']);
+export const loanStateEnum = pgEnum('loan_state', ['accepted', 'pending', 'returned']);
 export const reportStateEnum = pgEnum('report_state', ['pending', 'in_review', 'resolved']);
 
 export const roles = pgTable('roles', {
@@ -135,8 +135,9 @@ export const loans = pgTable('loans', {
         .notNull()
         .references(() => articles.articleId),
     requestText: text('request_text').notNull(),
-    state: loanStateEnum('state').notNull(),
-    returnTime: timestamp('return_time', { withTimezone: true }).notNull(),
+    confirmationCode: integer('confirmation_code'),
+    state: loanStateEnum('state').notNull().default('pending'),
+    returnTime: timestamp('return_time', { withTimezone: true }),
 });
 
 export const reviews = pgTable('reviews', {
