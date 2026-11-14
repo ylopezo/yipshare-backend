@@ -3,7 +3,7 @@ import {articleCategories, articles, categories, condominiumMembers, roles, user
 import {and, desc, eq, ilike, isNull, sql} from "drizzle-orm";
 import {ConflictError, ForbiddenError, NotFoundError} from "@/utils/errors";
 import * as z from "zod";
-import {ArticleRequest} from "@/schema/article.schema.ts";
+import {ArticleRequest} from "@/schema/articles.schema.ts";
 
 type ArticleData = z.infer<typeof ArticleRequest>;
 
@@ -17,14 +17,6 @@ const isCondominiumAdmin = async (userId: string, condominiumId: string) => {
         ))
         .limit(1);
     return Boolean(row);
-};
-
-const ensureAccess = async (userId: string, condominiumId: string) => {
-    const [member] = await db.select({userId: condominiumMembers.userId}).from(condominiumMembers)
-        .where(and(eq(condominiumMembers.userId, userId), eq(condominiumMembers.condominiumId, condominiumId)))
-        .limit(1);
-    if (!member && !(await isCondominiumAdmin(userId, condominiumId)))
-        throw new ForbiddenError("Not a member of this condominium");
 };
 
 const findCategoryId = async (name: string) => {
@@ -46,7 +38,6 @@ const findArticle = async (condominiumId: string, articleId: string) => {
 };
 
 export const listArticles = async (userId: string, condominiumId: string, q: string) => {
-    await ensureAccess(userId, condominiumId);
     return db.select({
         articleId: articles.articleId,
         name: articles.name,
@@ -72,7 +63,6 @@ export const listArticles = async (userId: string, condominiumId: string, q: str
 };
 
 export const createArticle = async (userId: string, condominiumId: string, {category, ...data}: ArticleData) => {
-    await ensureAccess(userId, condominiumId);
     const categoryId = await findCategoryId(category);
 
     return db.transaction(async (tx) => {
@@ -101,7 +91,7 @@ export const updateArticle = async (userId: string, condominiumId: string, artic
     });
 };
 
-export const deleteArticle = async (userId: string, condominiumId: string, articleId: string) => {
+export const  deleteArticle = async (userId: string, condominiumId: string, articleId: string) => {
     const stored = await findArticle(condominiumId, articleId);
 
     if (stored.lendingUser === userId) {

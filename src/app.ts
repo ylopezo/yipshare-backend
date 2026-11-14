@@ -2,12 +2,14 @@ import express from 'express';
 import errorHandler from "@/middlewares/error.middleware.ts";
 import authRoutes from "@/routes/auth.routes.ts";
 import condominiumRoutes from "@/routes/condominiums.routes.ts";
-import reportRoutes from "@/routes/report.routes.ts";
-import reviewRoutes from "@/routes/review.routes.ts";
-import articleRoutes from "@/routes/article.routes.ts";
+import reportRoutes from "@/routes/reports.routes.ts";
+import reviewRoutes from "@/routes/reviews.routes.ts";
+import articleRoutes from "@/routes/articles.routes.ts";
 import usersRoutes from "@/routes/users.routes.ts";
 import router from "@/routes/auth.routes.ts";
 import notificationsRoutes from "@/routes/notifications.routes.ts";
+import rolesRoutes from "@/routes/roles.routes.ts";
+import loansRoutes from "@/routes/loans.routes.ts";
 
 export const app = express();
 
@@ -30,4 +32,6 @@ app.use('/notifications', notificationsRoutes);
 app.use('/reports', reportRoutes);
 app.use('/reviews', reviewRoutes);
 app.use('/condominiums', articleRoutes);
+app.use('/roles', rolesRoutes);
+app.use('/loans', loansRoutes)
 app.use(errorHandler);
