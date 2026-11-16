@@ -35,7 +35,7 @@ const pendingMembersCount = sql<number>`(SELECT count(*)::int FROM ${pendingCond
 
 export const getMyCondominiums = async (userId: string) => {
     const [registered, joined] = await Promise.all([
-        db.selectDistinct({...safeCondominiumFields, pendingCount: sql<number>`${pendingLoansOf(userId)} + ${pendingMembersCount}`})
+        db.selectDistinct({...safeCondominiumFields, shortCode: condominiums.shortCode, pendingCount: sql<number>`${pendingLoansOf(userId)} + ${pendingMembersCount}`})
             .from(userRoles)
             .innerJoin(roles, eq(roles.roleId, userRoles.roleId))
             .innerJoin(condominiums, eq(condominiums.condominiumId, userRoles.condominiumId))
@@ -54,7 +54,7 @@ export const getMyCondominiums = async (userId: string) => {
                 eq(condominiums.digitalState, 'approved'),
             )),
     ]);
-    return {registered, joined};
+    return {registered: registered.map(({shortCode, ...condominium}) => ({...condominium, code: encodeInvCode(shortCode)})), joined};
 }
 
 export const getCondominiumById = async (id: string) => {
@@ -157,7 +157,7 @@ export const approveCondominium = async (id: string, userId: string) => {
         await tx.insert(notifications).values({
             userId: existing.userId,
             header: 'Condominio aceptado',
-            body: `Tu condominio «${existing.name}» fue aceptado. Comparte el código para que tus vecinos se unan.`,
+            body: `Tu condominio «${existing.name}» fue aceptado. Comparte el código ${existing.code} para que tus vecinos se unan.`,
             action: {type: 'condominium_approved', condominiumId: id, shortCode: existing.code},
         });
 
