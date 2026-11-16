@@ -21,7 +21,7 @@ export const userStateEnum = pgEnum('user_state', ['active', 'suspended', 'delet
 export const condominiumStateEnum = pgEnum('condominium_state', ['approved', 'pending', 'suspended', 'deleted']);
 export const articleStateEnum = pgEnum('article_state', ['excellent', 'good', 'medium', 'bad']);
 export const articleAvailabilityEnum = pgEnum('article_availability', ['available', 'not_available', 'pending']);
-export const loanStateEnum = pgEnum('loan_state', ['accepted', 'pending', 'returned', 'rejected']);
+export const loanStateEnum = pgEnum('loan_state', ['accepted', 'pending', 'returned', 'rejected', 'on_loan']);
 export const reportStateEnum = pgEnum('report_state', ['pending', 'in_review', 'resolved']);
 
 export const roles = pgTable('roles', {
@@ -49,7 +49,7 @@ export const users = pgTable('users', {
     name: varchar('name'),
     phoneNumber: varchar('phone_number'),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-    deletedAt: timestamp('created_at', { withTimezone: true }),
+    deletedAt: timestamp('deleted_at', { withTimezone: true }),
     computedRating: smallint('computed_rating').notNull().default(0),
     state: userStateEnum('state').notNull().default("active"),
 }, (table) => [
@@ -95,6 +95,7 @@ export const temporaryCondominiumVerificationData = pgTable('temporary_condomini
     ecrpcDocument: text('ecrpc_document').notNull(),
     aanaDocument: text('aana_document').notNull(),
     ownerIneDocument: text('owner_ine_document').notNull(),
+    taxIdDocument: text('tax_id_document'),
 });
 
 export const condominiumUnits = pgTable('condominium_units', {
@@ -118,6 +119,8 @@ export const articles = pgTable('articles', {
     state: articleStateEnum('state').notNull(),
     availability: articleAvailabilityEnum('availability').notNull(),
     maximumLendTime: smallint('maximum_lend_time').notNull(),
+    loanDurations: smallint('loan_durations').array().notNull().default(sql`'{}'`),
+    image: varchar('image'),
     deletedAt: timestamp('deleted_at', { withTimezone: true }),
 }, (table) => [
     check('chk_positive_lend_time', sql`${table.maximumLendTime} > 0`),
@@ -135,6 +138,7 @@ export const loans = pgTable('loans', {
         .notNull()
         .references(() => articles.articleId),
     requestText: text('request_text').notNull(),
+    days: smallint('days').notNull().default(1),
     confirmationCode: text('confirmation_code'),
     confirmationCodeExpiry: timestamp('confirmation_code_expiry'),
     state: loanStateEnum('state').notNull().default('pending'),

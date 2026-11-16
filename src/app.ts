@@ -10,6 +10,7 @@ import router from "@/routes/auth.routes.ts";
 import notificationsRoutes from "@/routes/notifications.routes.ts";
 import rolesRoutes from "@/routes/roles.routes.ts";
 import loansRoutes from "@/routes/loans.routes.ts";
+import uploadsRoutes from "@/routes/uploads.routes.ts";
 
 export const app = express();
 
@@ -33,5 +34,6 @@ app.use('/reports', reportRoutes);
 app.use('/reviews', reviewRoutes);
 app.use('/condominiums', articleRoutes);
 app.use('/roles', rolesRoutes);
-app.use('/loans', loansRoutes)
+app.use('/loans', loansRoutes);
+app.use('/uploads', uploadsRoutes);
 app.use(errorHandler);

@@ -2,8 +2,11 @@ import Sqids from "sqids";
 import {env} from "@/env.ts";
 import {NotFoundError} from "@/utils/errors";
 
+// Codes are typed by people: uppercase only, without I and 1 because the decoder reads them as L.
+export const CODE_ALPHABET = [...new Set(env.SQIDS_ALPHABET.toUpperCase())].filter((c) => c !== 'I' && c !== '1').join('');
+
 const sqids = new Sqids({
-    alphabet: env.SQIDS_ALPHABET,
+    alphabet: CODE_ALPHABET,
     minLength: 6,
 });
 

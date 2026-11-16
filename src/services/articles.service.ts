@@ -45,6 +45,8 @@ export const listArticles = async (userId: string, condominiumId: string, q: str
         state: articles.state,
         availability: articles.availability,
         maximumLendTime: articles.maximumLendTime,
+        loanDurations: articles.loanDurations,
+        image: articles.image,
         ownerId: articles.lendingUser,
         owner: users.username,
         rating: sql<number>`${users.computedRating}::float8 / 10`,
