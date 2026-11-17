@@ -1,5 +1,4 @@
 import dotenv from "dotenv";
-import {isFourInt32} from "@/utils/env_util.util.ts";
 dotenv.config();
 
 const DATABASE_URL = process.env.DATABASE_URL;
