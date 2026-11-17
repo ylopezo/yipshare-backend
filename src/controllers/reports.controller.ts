@@ -2,6 +2,7 @@ import type {Response, NextFunction} from "express";
 import type {AuthorizedRequest} from "@/middlewares/authorization.middleware.ts";
 import {CreateReportRequest, ReportParams, UpdateReportStateRequest} from "@/schema/reports.schema.ts";
 import {CondominiumIdParams} from "@/schema/condominiums.schema.ts";
+import {UserIdParams} from "@/schema/users.schema.ts";
 import {createReport, getReportsAboutLoan, getCondominiumReports, updateReportState} from "@/services/reports.service.ts";
 
 export const postReport = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
@@ -16,6 +17,15 @@ export const postReport = async (req: AuthorizedRequest, res: Response, next: Ne
 export const getMyReports = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try{
         return res.status(200).json(await getReportsAboutLoan(req.session.userId));
+    } catch (error) {
+        next(error);
+    }
+}
+
+export const getUserReports = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
+    try {
+        const {id} = UserIdParams.parse(req.params);
+        return res.status(200).json(await getReportsAboutLoan(id));
     } catch (error) {
         next(error);
     }

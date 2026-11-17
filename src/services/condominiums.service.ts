@@ -1,6 +1,6 @@
 import {db} from "@/db/db.ts";
-import {articles, condominiumMembers, condominiums, condominiumUnits, notifications, pendingCondominiumMembers, roles, userRoles, users} from "@/db/schema.ts";
-import {and, eq, getTableColumns, isNull, ne, sql} from "drizzle-orm";
+import {articles, condominiumMembers, condominiums, condominiumUnits, loans, notifications, pendingCondominiumMembers, permissionOverrides, permissions, roles, temporaryCondominiumVerificationData, userRoles, users} from "@/db/schema.ts";
+import {and, eq, getTableColumns, ilike, isNull, ne, sql} from "drizzle-orm";
 import {ConflictError, NotFoundError} from "@/utils/errors";
 import * as z from "zod";
 import {CreateCondominiumRequest, CreateCondominiumUnitRequest, JoinCondominiumRequest, UpdateCondominiumRequest} from "@/schema/condominiums.schema.ts";
@@ -26,9 +26,16 @@ const safeCondominiumFields = {
     adminUsername: users.username,
 };
 
+const pendingLoansOf = (userId: string) => sql<number>`(SELECT count(*)::int FROM ${loans}
+    INNER JOIN ${articles} ON ${articles.articleId} = ${loans.articleId}
+    WHERE ${loans.lenderId} = ${userId} AND ${loans.state} = 'pending' AND ${articles.condominiumId} = ${condominiums.condominiumId})`;
+
+const pendingMembersCount = sql<number>`(SELECT count(*)::int FROM ${pendingCondominiumMembers}
+    WHERE ${pendingCondominiumMembers.condominiumId} = ${condominiums.condominiumId})`;
+
 export const getMyCondominiums = async (userId: string) => {
     const [registered, joined] = await Promise.all([
-        db.selectDistinct(safeCondominiumFields)
+        db.selectDistinct({...safeCondominiumFields, shortCode: condominiums.shortCode, pendingCount: sql<number>`${pendingLoansOf(userId)} + ${pendingMembersCount}`})
             .from(userRoles)
             .innerJoin(roles, eq(roles.roleId, userRoles.roleId))
             .innerJoin(condominiums, eq(condominiums.condominiumId, userRoles.condominiumId))
@@ -38,7 +45,7 @@ export const getMyCondominiums = async (userId: string) => {
                 eq(roles.name, 'condominium_admin'),
                 eq(condominiums.digitalState, 'approved'),
             )),
-        db.selectDistinct(safeCondominiumFields)
+        db.selectDistinct({...safeCondominiumFields, pendingCount: pendingLoansOf(userId)})
             .from(condominiumMembers)
             .innerJoin(condominiums, eq(condominiums.condominiumId, condominiumMembers.condominiumId))
             .innerJoin(users, eq(users.userId, condominiums.userId))
@@ -47,7 +54,7 @@ export const getMyCondominiums = async (userId: string) => {
                 eq(condominiums.digitalState, 'approved'),
             )),
     ]);
-    return {registered, joined};
+    return {registered: registered.map(({shortCode, ...condominium}) => ({...condominium, code: encodeInvCode(shortCode)})), joined};
 }
 
 export const getCondominiumById = async (id: string) => {
@@ -72,7 +79,7 @@ export const getUnitsByCondominium = async (id: string) => {
 
 type CreateCondominiumData = z.infer<typeof CreateCondominiumRequest>;
 
-export const createCondominium = async (data: CreateCondominiumData, userId: string) => {
+export const createCondominium = async ({deed, minutes, taxId, identification, units, ...data}: CreateCondominiumData, userId: string) => {
     const role = await getRoleByNameService('condominium_admin');
 
     return await db.transaction(async (tx) => {
@@ -82,6 +89,23 @@ export const createCondominium = async (data: CreateCondominiumData, userId: str
         }).returning();
 
         if (!condominium) throw new Error('Failed to register condominium')
+
+        if (deed && minutes && identification) {
+            await tx.insert(temporaryCondominiumVerificationData).values({
+                condominiumId: condominium.condominiumId,
+                ecrpcDocument: deed,
+                aanaDocument: minutes,
+                ownerIneDocument: identification,
+                taxIdDocument: taxId,
+            });
+        }
+
+        if (units) {
+            await tx.insert(condominiumUnits).values(Array.from({length: units}, (_, index) => ({
+                condominiumId: condominium.condominiumId,
+                name: String(index + 1),
+            })));
+        }
 
         await tx.insert(userRoles).values({
             userId: userId,
@@ -133,7 +157,7 @@ export const approveCondominium = async (id: string, userId: string) => {
         await tx.insert(notifications).values({
             userId: existing.userId,
             header: 'Condominio aceptado',
-            body: `Tu condominio «${existing.name}» fue aceptado. Comparte el código para que tus vecinos se unan.`,
+            body: `Tu condominio «${existing.name}» fue aceptado. Comparte el código ${existing.code} para que tus vecinos se unan.`,
             action: {type: 'condominium_approved', condominiumId: id, shortCode: existing.code},
         });
 
@@ -214,6 +238,11 @@ export const requestJoin = async (userId: string, {code, unit, unitId}: JoinCond
     const condominiumId = condominium.condominiumId;
 
     if (unitId) await getUnitById(condominiumId, unitId);
+    const [suggested] = unitId ? [] : await db
+        .select({id: condominiumUnits.condominiumUnitId})
+        .from(condominiumUnits)
+        .where(and(eq(condominiumUnits.condominiumId, condominiumId), ilike(condominiumUnits.name, unit)))
+        .limit(1);
 
     const [member] = await db
         .select()
@@ -224,7 +253,7 @@ export const requestJoin = async (userId: string, {code, unit, unitId}: JoinCond
 
     const [pending] = await db
         .insert(pendingCondominiumMembers)
-        .values({userId, condominiumId, unit, suggestedUnitId: unitId ?? null})
+        .values({userId, condominiumId, unit, suggestedUnitId: unitId ?? suggested?.id ?? null})
         .onConflictDoNothing()
         .returning();
     if (!pending) throw new ConflictError("Request already pending");
@@ -240,8 +269,15 @@ export const getMembers = async (condominiumId: string) => {
             username: users.username,
             name: users.name,
             paternalSurname: users.paternalSurname,
+            phoneNumber: users.phoneNumber,
+            computedRating: users.computedRating,
             unitId: condominiumUnits.condominiumUnitId,
             unitName: condominiumUnits.name,
+            isAdmin: sql<boolean>`EXISTS (SELECT 1 FROM ${userRoles} INNER JOIN ${roles} ON ${roles.roleId} = ${userRoles.roleId}
+                WHERE ${userRoles.userId} = ${users.userId} AND ${userRoles.condominiumId} = ${condominiumId} AND ${roles.name} = 'condominium_admin')`,
+            canRequestLoans: sql<boolean>`NOT EXISTS (SELECT 1 FROM ${permissionOverrides} INNER JOIN ${permissions} ON ${permissions.permissionId} = ${permissionOverrides.permissionId}
+                WHERE ${permissionOverrides.userId} = ${users.userId} AND ${permissionOverrides.condominiumId} = ${condominiumId}
+                AND ${permissions.name} = ${LOAN_PERMISSION} AND ${permissionOverrides.allowed} = false)`,
         })
         .from(condominiumMembers)
         .innerJoin(users, eq(condominiumMembers.userId, users.userId))
@@ -257,6 +293,9 @@ export const getPendingMembers = async (condominiumId: string) => {
             username: users.username,
             name: users.name,
             paternalSurname: users.paternalSurname,
+            maternalSurname: users.maternalSurname,
+            phoneNumber: users.phoneNumber,
+            computedRating: users.computedRating,
             unit: pendingCondominiumMembers.unit,
             suggestedUnitId: pendingCondominiumMembers.suggestedUnitId,
         })
@@ -284,7 +323,62 @@ export const approveMember = async (condominiumId: string, userId: string, unitI
             .insert(userRoles)
             .values({userId, condominiumId, roleId: residentRole.roleId, isGlobal: false})
             .onConflictDoNothing();
+        await tx.insert(notifications).values({
+            userId,
+            header: 'Solicitud aceptada',
+            body: 'Tu solicitud para unirte al condominio fue aceptada.',
+            action: {type: 'join_approved', condominiumId},
+        });
     });
+}
+
+export const rejectMember = async (condominiumId: string, userId: string) => {
+    await db.transaction(async (tx) => {
+        const [pending] = await tx
+            .delete(pendingCondominiumMembers)
+            .where(and(eq(pendingCondominiumMembers.userId, userId), eq(pendingCondominiumMembers.condominiumId, condominiumId)))
+            .returning();
+        if (!pending) throw new NotFoundError("Join request not found");
+
+        await tx.insert(notifications).values({
+            userId,
+            header: 'Solicitud rechazada',
+            body: 'Tu solicitud para unirte al condominio fue rechazada.',
+            action: {type: 'join_rejected', condominiumId},
+        });
+    });
+}
+
+export const LOAN_PERMISSION = 'users:create.loans';
+
+export const setLoanAccess = async (condominiumId: string, userId: string, adminId: string, allowed: boolean) => {
+    if (userId === adminId) throw new ConflictError("You can't change your own access");
+    const [member] = await db.select().from(condominiumMembers)
+        .where(and(eq(condominiumMembers.userId, userId), eq(condominiumMembers.condominiumId, condominiumId))).limit(1);
+    if (!member) throw new NotFoundError("Member not found");
+    const [permission] = await db.select().from(permissions).where(eq(permissions.name, LOAN_PERMISSION)).limit(1);
+    if (!permission) throw new NotFoundError("Permission not found");
+
+    await db.delete(permissionOverrides).where(and(
+        eq(permissionOverrides.userId, userId),
+        eq(permissionOverrides.condominiumId, condominiumId),
+        eq(permissionOverrides.permissionId, permission.permissionId),
+    ));
+    if (!allowed) {
+        await db.insert(permissionOverrides).values({userId, condominiumId, permissionId: permission.permissionId, allowed: false});
+    }
+}
+
+export const canRequestLoans = async (userId: string, condominiumId: string) => {
+    const [denied] = await db.select({id: permissionOverrides.uuid}).from(permissionOverrides)
+        .innerJoin(permissions, eq(permissions.permissionId, permissionOverrides.permissionId))
+        .where(and(
+            eq(permissionOverrides.userId, userId),
+            eq(permissionOverrides.condominiumId, condominiumId),
+            eq(permissions.name, LOAN_PERMISSION),
+            eq(permissionOverrides.allowed, false),
+        )).limit(1);
+    return !denied;
 }
 
 export const removeMember = async (condominiumId: string, userId: string, adminId: string) => {

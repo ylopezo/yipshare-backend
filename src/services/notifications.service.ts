@@ -12,6 +12,7 @@ export const getNotificationsService = async (userId: string) => db
         body: notifications.body,
         action: notifications.action,
         read: sql<boolean>`${notifications.readAt} IS NOT NULL`,
+        createdAt: notifications.createdAt,
         image: notifications.image
     })
     .from(notifications)
@@ -59,7 +60,14 @@ export const createNotificationService = async (userId: string, header: string, 
 }
 
 export const deleteNotificationService = async (id: string) => {
-    const [notification] = await db.delete(notifications).where(eq(notifications.notificationId, id));
+    const [notification] = await db.delete(notifications).where(eq(notifications.notificationId, id)).returning();
     if (!notification) throw new NotFoundError('Notification not found');
     return notification;
+}
+
+export const deleteNotificationSelfService = async (userId: string, id: string) => {
+    const [notification] = await db.delete(notifications)
+        .where(and(eq(notifications.notificationId, id), eq(notifications.userId, userId)))
+        .returning();
+    if (!notification) throw new NotFoundError('Notification not found');
 }

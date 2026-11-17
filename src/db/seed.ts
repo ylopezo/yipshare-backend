@@ -80,28 +80,51 @@ async function seed() {
             .onConflictDoNothing();
     }
 
-    const [condominiumAdminRole] = await db
-        .insert(roles)
-        .values({ name: "condominium_admin" })
-        .onConflictDoUpdate({
-            target: roles.name,
-            set: { name: "condominium_admin" },
-        })
-        .returning();
+    const grantRole = async (name: string, permissionNames: string[]) => {
+        const [role] = await db
+            .insert(roles)
+            .values({ name })
+            .onConflictDoUpdate({ target: roles.name, set: { name } })
+            .returning();
+        const granted = allDbPermissions.filter((perm) => permissionNames.includes(perm.name));
+        if (role && granted.length > 0) {
+            await db
+                .insert(rolePermissions)
+                .values(granted.map((perm) => ({ roleId: role.roleId, permissionId: perm.permissionId, allowed: true })))
+                .onConflictDoNothing();
+        }
+        return role;
+    };
 
-    const reportPermissions = allDbPermissions.filter((perm) => perm.name.startsWith("report:"));
+    const userRole = await grantRole("user", [
+        "users:read.self", "users:read.profile", "users:update.self", "users:delete.self",
+        "users:read.notifications", "users:update.notifications.markRead", "users:delete.notifications",
+        "users:read.loans.all", "users:read.loans", "users:create.loans",
+        "users:update.loans.verificationCode", "users:update.loans.accept", "users:update.loans.return",
+        "users:create.reports", "users:read.reports.all", "users:create.reviews", "users:read.reviews.all",
+    ]);
 
-    if (condominiumAdminRole && reportPermissions.length > 0) {
-        await db
-            .insert(rolePermissions)
-            .values(
-                reportPermissions.map((perm) => ({
-                    roleId: condominiumAdminRole.roleId,
-                    permissionId: perm.permissionId,
-                    allowed: true,
-                }))
-            )
-            .onConflictDoNothing();
+    const residentPermissions = [
+        "condominium:read", "condominium:read.articles", "condominium:read.articles.all",
+        "condominium:create.articles", "condominium:update.articles", "condominium:delete.articles",
+    ];
+    await grantRole("resident", residentPermissions);
+    await grantRole("condominium_admin", [
+        ...residentPermissions,
+        "condominium:update", "condominium:read.units", "condominium:create.units", "condominium:update.units",
+        "condominium:delete.units", "condominium:read.members", "condominium:approve.members",
+        "condominium:update.members", "condominium:delete.members", "condominium:read.loans.all",
+        "report:read", "report:update",
+    ]);
+
+    if (userRole) {
+        const everyone = await db.select({ userId: users.userId }).from(users);
+        if (everyone.length > 0) {
+            await db
+                .insert(userRoles)
+                .values(everyone.map(({ userId }) => ({ userId, roleId: userRole.roleId, condominiumId: null, isGlobal: true })))
+                .onConflictDoNothing();
+        }
     }
 
     const hashedPassword = await argon2.hash(password);
