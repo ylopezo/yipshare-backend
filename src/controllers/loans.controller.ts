@@ -1,18 +1,17 @@
 import type {AuthorizedRequest} from "@/middlewares/authorization.middleware.ts";
 import type {NextFunction, Response} from "express";
-import {LoanQueryRequest, LoanRequest, VerificationCodeBody} from "@/schema/loans.schema.ts";
+import {LoanQueryRequest, LoanRequest, MyLoansQuery, VerificationCodeBody} from "@/schema/loans.schema.ts";
 import {
-    createLoanService, generateVerificationCodeService, getAllLoansFromCondominium,
-    getAllLoansService, getLoanFromIdSelfService, getLoanFromIdService, stateChangeLoanService
+    answerLoanRequestService, confirmCodeService, createLoanService, generateVerificationCodeService,
+    getAllLoansFromCondominium, getAllLoansService, getLoanFromIdSelfService, getLoanFromIdService,
+    getMyLentLoansService, getMyLoansService
 } from "@/services/loans.service.ts";
-import {LoanLenderRequest, LoanUserRequest} from "@/schema/loans.schema.ts";
-import {getAllLoansFromLenderService, getAllLoansFromUserService} from "@/services/loans.service.ts";
 import {CondominiumIdParams} from "@/schema/condominiums.schema.ts";
 
 export const createLoan = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
         const data = LoanRequest.parse(req.body);
-        return res.status(201).json(await createLoanService(data));
+        return res.status(201).json(await createLoanService(req.session.userId, data));
     } catch (error) {
         next(error);
     }
@@ -53,11 +52,10 @@ export const getLoanFromIdUser = async (req: AuthorizedRequest, res: Response, n
     }
 }
 
-
 export const getLoansFromLender = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
-        const data = LoanLenderRequest.parse(req.params);
-        return res.status(200).json(await getAllLoansFromLenderService(data.id));
+        const {condominiumId} = MyLoansQuery.parse(req.query);
+        return res.status(200).json(await getMyLentLoansService(req.session.userId, condominiumId));
     } catch (error) {
         next(error);
     }
@@ -65,8 +63,8 @@ export const getLoansFromLender = async (req: AuthorizedRequest, res: Response, 
 
 export const getLoansFromUser = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
-        const data = LoanUserRequest.parse(req.params);
-        return res.status(200).json(await getAllLoansFromUserService(data.id));
+        const {condominiumId} = MyLoansQuery.parse(req.query);
+        return res.status(200).json(await getMyLoansService(req.session.userId, condominiumId));
     } catch (error) {
         next(error);
     }
@@ -84,27 +82,26 @@ export const generateVerificationCode = async (req: AuthorizedRequest, res: Resp
 export const markAccepted = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
         const data = LoanQueryRequest.parse(req.params);
-        const body = VerificationCodeBody.parse(req.body);
-        return res.status(200).json(await stateChangeLoanService(req.session.userId, data.id, 'pending', 'accepted', body.code));
+        return res.status(200).json(await answerLoanRequestService(req.session.userId, data.id, 'accepted'));
     } catch (error) {
         next(error);
     }
 }
 
-export const markReturned = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
+export const markRejected = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
         const data = LoanQueryRequest.parse(req.params);
-        const body = VerificationCodeBody.parse(req.body);
-        return res.status(200).json(await stateChangeLoanService(req.session.userId, data.id, 'accepted', 'returned', body.code));
+        return res.status(200).json(await answerLoanRequestService(req.session.userId, data.id, 'rejected'));
     } catch (error) {
         next(error);
     }
 }
-export const markRejected = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
+
+export const confirmCode = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
         const data = LoanQueryRequest.parse(req.params);
         const body = VerificationCodeBody.parse(req.body);
-        return res.status(200).json(await stateChangeLoanService(req.session.userId, data.id, 'accepted', 'rejected', body.code));
+        return res.status(200).json(await confirmCodeService(req.session.userId, data.id, body.code));
     } catch (error) {
         next(error);
     }
