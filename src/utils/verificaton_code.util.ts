@@ -1,12 +1,12 @@
 import crypto from 'node:crypto';
-import {env} from "@/env.ts";
+import {CODE_ALPHABET} from "@/utils/sqids.util.ts";
 
 export function generateVerificationCodeUtil(length = 8) : string {
     const bytes = crypto.randomBytes(length);
     let newCode = '';
 
     for (let i = 0; i < bytes.length; i++) {
-        newCode += env.SQIDS_ALPHABET[bytes[i]! & 31];
+        newCode += CODE_ALPHABET[bytes[i]! % CODE_ALPHABET.length];
     }
 
     return newCode;

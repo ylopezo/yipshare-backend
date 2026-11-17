@@ -3,14 +3,14 @@ import {type NextFunction, request, type Response} from "express";
 import {
     createUserService,
     deleteUserService,
-    getUserService, getUsersService,
+    getUserProfileService, getUserService, getUsersService,
     modifyUserService
 } from "@/services/user.service.ts";
 import {ModifyUserRequest, UserIdParams} from "@/schema/users.schema.ts";
 import {RegisterRequest} from "@/schema/auth.schema.ts";
 import {
     getNotificationServiceUserFiltered,
-    getNotificationsService, markNotificationAsRead, markNotificationAsReadSelf,
+    deleteNotificationSelfService, getNotificationsService, markNotificationAsRead, markNotificationAsReadSelf,
 } from "@/services/notifications.service.ts";
 import {NotificationFetchIdParams} from "@/schema/notifications.schema.ts";
 
@@ -72,7 +72,7 @@ export const deleteUser = async (req: AuthorizedRequest, res: Response, next: Ne
     try {
         const requestBody = UserIdParams.parse(req.params);
         await deleteUserService(requestBody.id);
-        return res.status(204);
+        return res.status(204).end();
     } catch (error) {
         next(error);
     }
@@ -97,8 +97,18 @@ export const modifyUserSelf = async (req: AuthorizedRequest, res: Response, next
             requestBody.email,
             requestBody.phoneNumber,
             requestBody.username,
-            requestBody.password);
+            requestBody.password,
+            requestBody.currentPassword);
         return res.status(200).json(user);
+    } catch (error) {
+        next(error);
+    }
+}
+
+export const getUserProfile = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
+    try {
+        const {id} = UserIdParams.parse(req.params);
+        return res.status(200).json(await getUserProfileService(id));
     } catch (error) {
         next(error);
     }
@@ -107,7 +117,7 @@ export const modifyUserSelf = async (req: AuthorizedRequest, res: Response, next
 export const deleteUserSelf = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
         await deleteUserService(req.session.userId);
-        return res.status(204);
+        return res.status(204).end();
     } catch (error) {
         next(error);
     }
@@ -134,6 +144,17 @@ export const readNotificationSelf = async (req: AuthorizedRequest, res: Response
     try {
         const params = NotificationFetchIdParams.parse(req.params);
         await markNotificationAsReadSelf(req.session.userId, params.id);
+        return res.status(204).end();
+    } catch (error) {
+        next(error);
+    }
+}
+
+
+export const deleteNotificationSelf = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
+    try {
+        const params = NotificationFetchIdParams.parse(req.params);
+        await deleteNotificationSelfService(req.session.userId, params.id);
         return res.status(204).end();
     } catch (error) {
         next(error);

@@ -6,7 +6,7 @@ import {
     deleteUser, deleteUserSelf,
     getListOfUsers,
     getUser,
-    getUserSelf,
+    getUserSelf, getUserProfile,
     modifyUser, modifyUserSelf
 } from "@/controllers/users.controller.ts";
 
@@ -16,6 +16,7 @@ router.get('/', authenticationHandler, withPermissions('users:read.all') ,withAu
 router.get('/me', authenticationHandler, withPermissions('users:read.self') ,withAuthz(getUserSelf));
 router.patch('/me', authenticationHandler, withPermissions('users:update.self'), withAuthz(modifyUserSelf));
 router.delete('/me', authenticationHandler, withPermissions('users:delete.self'), withAuthz(deleteUserSelf));
+router.get('/:id/profile', authenticationHandler, withPermissions('users:read.profile'), withAuthz(getUserProfile));
 router.get('/:id', authenticationHandler, withPermissions('users:read') ,withAuthz(getUser));
 router.post('/:id', authenticationHandler, withPermissions('users:create'), withAuthz(createUser));
 router.patch('/:id', authenticationHandler, withPermissions('users:update'), withAuthz(modifyUser));

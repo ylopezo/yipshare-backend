@@ -1,5 +1,5 @@
-import {sessions, userRoles, users} from "@/db/schema.ts";
-import {and, eq} from "drizzle-orm";
+import {roles, sessions, userRoles, users} from "@/db/schema.ts";
+import {and, eq, inArray} from "drizzle-orm";
 import {ConflictError, InternalServerError, NotFoundError, UnauthorizedError} from "@/utils/errors.js";
 import * as argon2 from 'argon2';
 import {getJwtSecret} from "@/config/jwt.ts";
@@ -43,15 +43,15 @@ export const registerService = async (name: string,
     const user = await createUserService(name, paternalSurname, maternalSurname, email, phoneNumber, username, password);
     if (!user) throw new InternalServerError("Failed to register user");
 
-    const session_token = randomBytes(32).toString('hex');
-    const hash = createHash('sha256').update(session_token).digest('hex');
+    const sessionToken = randomBytes(32).toString('hex');
+    const hash = createHash('sha256').update(sessionToken).digest('hex');
     const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
 
     await db.insert(sessions).values({tokenHash: hash, userId: user.userId, expiresAt: expiresAt});
 
     const secret = await getJwtSecret();
 
-    return await new SignJWT({session_token: session_token})
+    return await new SignJWT({sessionToken: sessionToken})
         .setProtectedHeader({ alg: 'HS256' })
         .setSubject(user.userId)
         .setIssuer('https://yipshare.oelohey.dev')
@@ -74,7 +74,8 @@ export const profileService = async (userId: string) => {
     const [globalRole] = await db
         .select({roleId: userRoles.roleId})
         .from(userRoles)
-        .where(and(eq(userRoles.userId, userId), eq(userRoles.isGlobal, true)))
+        .innerJoin(roles, eq(roles.roleId, userRoles.roleId))
+        .where(and(eq(userRoles.userId, userId), eq(userRoles.isGlobal, true), inArray(roles.name, ['super_admin', 'admin'])))
         .limit(1);
 
     return {...user, isGlobalAdmin: Boolean(globalRole)};

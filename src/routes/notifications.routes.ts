@@ -7,15 +7,15 @@ import {
     getNotification,
     getNotifications, readNotification
 } from "@/controllers/notifications.controller.ts";
-import {getNotificationSelf, getNotificationsSelf} from "@/controllers/users.controller.ts";
+import {deleteNotificationSelf, getNotificationSelf, getNotificationsSelf, readNotificationSelf} from "@/controllers/users.controller.ts";
 
 const router = Router();
 
 
 router.get('/me', authenticationHandler, withPermissions('users:read.notifications'), withAuthz(getNotificationsSelf));
 router.get('/me/:id', authenticationHandler, withPermissions('users:read.notifications'), withAuthz(getNotificationSelf));
-router.delete('/me/:id', authenticationHandler, withPermissions('users:delete.notifications'), withAuthz(deleteNotification));
-router.post('/me/:id/read', authenticationHandler, withPermissions('users:update.notifications.markRead'), withAuthz(deleteNotification));
+router.delete('/me/:id', authenticationHandler, withPermissions('users:delete.notifications'), withAuthz(deleteNotificationSelf));
+router.post('/me/:id/read', authenticationHandler, withPermissions('users:update.notifications.markRead'), withAuthz(readNotificationSelf));
 
 router.get('/', authenticationHandler, withPermissions('notifications:read'), withAuthz(getNotifications));
 router.get('/:id', authenticationHandler, withPermissions('notifications:read'), withAuthz(getNotification));

@@ -31,6 +31,13 @@ const errorHandler = (err: any, req: Request, res: Response, next: NextFunction)
         });
     }
 
+    if (err?.type === 'entity.too.large') {
+        return res.status(413).json({
+            success: false,
+            message: 'File too large',
+        });
+    }
+
     if (err instanceof SyntaxError && 'body' in err) {
         return res.status(400).json({
             success: false,
