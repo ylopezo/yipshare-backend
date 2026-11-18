@@ -9,7 +9,7 @@ import {CreateReportRequest, UpdateReportStateRequest} from "@/schema/reports.sc
 
 type CreateReportData = z.infer<typeof CreateReportRequest>;
 
-export const createReport = async (authorId: string, {loanId, text, image}: CreateReportData) => {
+export const createReport = async (authorId: string, {loanId, text, images = []}: CreateReportData) => {
     const [loan] = await db.select().from(loans).where(eq(loans.loanId, loanId)).limit(1);
     if (!loan) throw new NotFoundError("Loan not found");
     if (loan.lenderId !== authorId && loan.userId !== authorId)
@@ -26,7 +26,7 @@ export const createReport = async (authorId: string, {loanId, text, image}: Crea
 
     return db.transaction(async (tx) => {
         const [report] = await tx.insert(reports).values({loanId, authorId, reportText: text}).returning();
-        if (image) await tx.insert(reportEvidences).values({reportId: report!.reportId, image}).returning();
+        if (images.length) await tx.insert(reportEvidences).values(images.map(image => ({reportId: report!.reportId, image})));
         return report;
     });
 
