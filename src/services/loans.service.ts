@@ -104,8 +104,24 @@ export const getMyLentLoansService = async (userId: string, condominiumId?: stri
         .orderBy(desc(loans.loanId));
 };
 
+const lender = alias(users, 'lender');
+const borrower = alias(users, 'borrower');
+
 export const getAllLoansFromCondominium = async (condominiumId: string) => {
-    return await db.select(safeLoanFields).from(loans).innerJoin(articles,eq(loans.articleId, articles.articleId)).where(eq(articles.condominiumId, condominiumId));
+    return db.select({
+        ...safeLoanFields,
+        days: loans.days,
+        startedAt: loans.confirmationTime,
+        articleName: articles.name,
+        lenderUsername: lender.username,
+        borrowerUsername: borrower.username,
+    })
+        .from(loans)
+        .innerJoin(articles, eq(loans.articleId, articles.articleId))
+        .innerJoin(lender, eq(lender.userId, loans.lenderId))
+        .innerJoin(borrower, eq(borrower.userId, loans.userId))
+        .where(eq(articles.condominiumId, condominiumId))
+        .orderBy(desc(loans.loanId));
 };
 
 export const getLoanFromIdService = async (loanId: string) => {
