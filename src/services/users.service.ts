@@ -142,3 +142,11 @@ export const deleteUserService = async (id: string) => {
     if (!deleted) throw new NotFoundError('User not found');
     await db.delete(sessions).where(eq(sessions.userId, id));
 }
+
+export const uploadPFPService = async (userId: string, image: string) => {
+    const [user] = await db.update(users)
+        .set({profile_picture : image})
+        .where(eq(users.userId, userId))
+        .returning();
+    return user;
+}

@@ -4,11 +4,13 @@ import {CreateReportRequest, ReportParams, UpdateReportStateRequest} from "@/sch
 import {CondominiumIdParams} from "@/schema/condominiums.schema.ts";
 import {UserIdParams} from "@/schema/users.schema.ts";
 import {createReport, getReportsAboutLoan, getCondominiumReports, updateReportState} from "@/services/reports.service.ts";
+import type {ReportImgsHandles} from "@/routes/reports.routes.ts";
 
-export const postReport = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
+export const postReport = async (req: AuthorizedRequest<{fileHandles: ReportImgsHandles}>, res: Response, next: NextFunction) => {
     try{
+        const images = req.fileHandles.images.map(k => (k.url));
         const data = CreateReportRequest.parse(req.body);
-        return res.status(201).json(await createReport(req.session.userId, data));
+        return res.status(201).json(await createReport(req.session.userId, data, images));
     } catch (error) {
         next(error);
     }

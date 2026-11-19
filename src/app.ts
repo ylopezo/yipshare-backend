@@ -10,7 +10,7 @@ import router from "@/routes/auth.routes.ts";
 import notificationsRoutes from "@/routes/notifications.routes.ts";
 import rolesRoutes from "@/routes/roles.routes.ts";
 import loansRoutes from "@/routes/loans.routes.ts";
-import uploadsRoutes from "@/routes/uploads.routes.ts";
+import uploadsRoutes from "@/routes/files.routes.ts";
 
 export const app = express();
 

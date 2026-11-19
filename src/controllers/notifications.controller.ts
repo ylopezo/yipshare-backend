@@ -3,7 +3,7 @@ import type {NextFunction, Response} from "express";
 import {
     createNotificationService,
     deleteNotificationService,
-    getNotificationsService, markNotificationAsRead, markNotificationAsReadSelf
+    getNotificationsService, markNotificationAsRead
 } from "@/services/notifications.service.ts";
 import {getNotificationService} from "@/services/notifications.service.ts";
 import {NotificationCreate, NotificationFetchIdParams} from "@/schema/notifications.schema.ts";
@@ -29,7 +29,7 @@ export const getNotification = async (req: AuthorizedRequest, res: Response, nex
 export const createNotification = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
         const body = NotificationCreate.parse(req.body);
-        return res.status(200).json(await createNotificationService(body.userId, body.header, body.body, body.action, body.image));
+        return res.status(200).json(await createNotificationService(body.userId, body.header, body.body, body.action));
     } catch (error) {
         next(error);
     }

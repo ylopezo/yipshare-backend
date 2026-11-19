@@ -13,13 +13,7 @@ const CondominiumAddressRequest = z.object({
     state: z.string().trim().min(1, "State is required"),
 });
 
-const UploadPath = z.string().startsWith('/uploads/');
-
 export const CreateCondominiumRequest = CondominiumAddressRequest.extend({
-    deed: UploadPath.optional(),
-    minutes: UploadPath.optional(),
-    taxId: UploadPath.optional(),
-    identification: UploadPath.optional(),
     units: z.int().min(1).max(500).optional(),
 });
 

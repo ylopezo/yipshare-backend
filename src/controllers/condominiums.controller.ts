@@ -1,7 +1,20 @@
 import {type Request, type Response, type NextFunction} from "express";
 import {getCondominiums, getMyCondominiums, getCondominiumById, rejectCondominium, getUnitsByCondominium, createCondominium, updateCondominium, deleteCondominium, approveCondominium, getUnitById, createUnit, updateUnit, deleteUnit, requestJoin, getMembers, getPendingMembers, approveMember, removeMember, rejectMember, setLoanAccess} from "@/services/condominiums.service.ts";
-import {CondominiumIdParams, CondominiumUnitParams, CreateCondominiumRequest, CreateCondominiumUnitRequest, UpdateCondominiumRequest, UpdateCondominiumUnitRequest, JoinCondominiumRequest, MemberParams, ApproveMemberRequest, LoanAccessRequest} from "@/schema/condominiums.schema.ts";
+import {
+    CondominiumIdParams,
+    CondominiumUnitParams,
+    CreateCondominiumRequest,
+    CreateCondominiumUnitRequest,
+    UpdateCondominiumRequest,
+    UpdateCondominiumUnitRequest,
+    JoinCondominiumRequest,
+    MemberParams,
+    ApproveMemberRequest,
+    LoanAccessRequest,
+} from "@/schema/condominiums.schema.ts";
 import type {AuthorizedRequest} from "@/middlewares/authorization.middleware.ts";
+import {BadRequestError} from "@/utils/errors";
+import type {CondominiumDocHandles} from "@/routes/condominiums.routes.ts";
 
 export const getListOfCondominiums = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
@@ -30,11 +43,22 @@ export const getCondominiumUnits = async (req: AuthorizedRequest, res: Response,
     }
 }
 
-export const postCondominium = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
+export const postCondominium = async (req: AuthorizedRequest<{ fileHandles: CondominiumDocHandles }>, res: Response, next: NextFunction) => {
     try {
+        const {
+            ecrpcDocument: [ecrpc],
+            aanaDocument: [aana],
+            ownerIneDocument: [ownerIne],
+            condominiumRfcDocument: [rfc],
+        } = req.fileHandles;
         const userId = req.session.userId;
         const data = CreateCondominiumRequest.parse(req.body);
-        const condominium = await createCondominium(data, userId);
+        const condominium = await createCondominium(
+            ecrpc!.url,
+            aana!.url,
+            ownerIne!.url,
+            rfc!.url,
+            data, userId);
         return res.status(201).json(condominium);
     } catch (error) {
         next(error);

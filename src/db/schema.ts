@@ -52,6 +52,7 @@ export const users = pgTable('users', {
     deletedAt: timestamp('deleted_at', { withTimezone: true }),
     computedRating: smallint('computed_rating').notNull().default(0),
     state: userStateEnum('state').notNull().default("active"),
+    profile_picture : varchar('profile_picture')
 }, (table) => [
     check(
         'chk_active_user_data',
@@ -95,7 +96,7 @@ export const temporaryCondominiumVerificationData = pgTable('temporary_condomini
     ecrpcDocument: text('ecrpc_document').notNull(),
     aanaDocument: text('aana_document').notNull(),
     ownerIneDocument: text('owner_ine_document').notNull(),
-    taxIdDocument: text('tax_id_document'),
+    condominiumRfcDocument: text('condominium_rfc_document').notNull(),
 });
 
 export const condominiumUnits = pgTable('condominium_units', {
@@ -192,7 +193,6 @@ export const notifications = pgTable('notifications', {
         .references(() => users.userId),
     header: varchar('header').notNull(),
     body: text('body').notNull(),
-    image: varchar('image'),
     action: jsonb('action').notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     readAt: timestamp('read_at', { withTimezone: true }),

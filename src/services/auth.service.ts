@@ -6,7 +6,7 @@ import {getJwtSecret} from "@/config/jwt.ts";
 import {db} from "@/db/db.ts";
 import {createHash, randomBytes} from "node:crypto";
 import {SignJWT} from "jose";
-import {createUserService} from "@/services/user.service.ts";
+import {createUserService} from "@/services/users.service.ts";
 
 const SESSION_DURATION_MS = 30 * 24 * 60 * 60 * 1000;
 

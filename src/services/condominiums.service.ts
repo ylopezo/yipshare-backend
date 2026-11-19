@@ -79,7 +79,7 @@ export const getUnitsByCondominium = async (id: string) => {
 
 type CreateCondominiumData = z.infer<typeof CreateCondominiumRequest>;
 
-export const createCondominium = async ({deed, minutes, taxId, identification, units, ...data}: CreateCondominiumData, userId: string) => {
+export const createCondominium = async (ecrpcDocument: string, aanaDocument: string, ownerIdDocument: string, condominiumRfcDocument: string,{units, ...data}: CreateCondominiumData, userId: string) => {
     const role = await getRoleByNameService('condominium_admin');
 
     return await db.transaction(async (tx) => {
@@ -90,15 +90,13 @@ export const createCondominium = async ({deed, minutes, taxId, identification, u
 
         if (!condominium) throw new Error('Failed to register condominium')
 
-        if (deed && minutes && identification) {
-            await tx.insert(temporaryCondominiumVerificationData).values({
-                condominiumId: condominium.condominiumId,
-                ecrpcDocument: deed,
-                aanaDocument: minutes,
-                ownerIneDocument: identification,
-                taxIdDocument: taxId,
-            });
-        }
+        await tx.insert(temporaryCondominiumVerificationData).values({
+            condominiumId: condominium.condominiumId,
+            ecrpcDocument: ecrpcDocument,
+            aanaDocument: aanaDocument,
+            ownerIneDocument: ownerIdDocument,
+            condominiumRfcDocument: condominiumRfcDocument,
+        });
 
         if (units) {
             await tx.insert(condominiumUnits).values(Array.from({length: units}, (_, index) => ({
