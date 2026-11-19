@@ -3,6 +3,7 @@ import type {AuthorizedRequest} from "@/middlewares/authorization.middleware.ts"
 import {ArticleParams, ArticleQuery, ArticleRequest} from "@/schema/articles.schema.ts";
 import {CondominiumIdParams} from "@/schema/condominiums.schema.ts";
 import {listArticles, createArticle, updateArticle, deleteArticle} from "@/services/articles.service.ts";
+import type {ArticleImgHandles, ArticleUpdateImgHandles} from "@/routes/articles.routes.ts";
 
 export const getArticles = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
@@ -14,21 +15,28 @@ export const getArticles = async (req: AuthorizedRequest, res: Response, next: N
     }
 }
 
-export const postArticle = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
+export const postArticle = async (req: AuthorizedRequest<{ fileHandles: ArticleImgHandles }>, res: Response, next: NextFunction) => {
     try {
+        const {
+            image: [image],
+        } = req.fileHandles;
         const {id} = CondominiumIdParams.parse(req.params);
         const data = ArticleRequest.parse(req.body);
-        return res.status(201).json(await createArticle(req.session.userId, id, data));
+        return res.status(201).json(await createArticle(image!.url, req.session.userId, id, data));
     } catch (error) {
         next(error);
     }
 }
 
-export const patchArticle = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
+export const patchArticle = async (req: AuthorizedRequest<{fileHandles: ArticleUpdateImgHandles}>, res: Response, next: NextFunction) => {
     try {
+        const {
+            image: [image],
+        } = req.fileHandles;
+        const imageUrl = image ? image.url : undefined;
         const {id, articleId} = ArticleParams.parse(req.params);
         const data = ArticleRequest.parse(req.body);
-        return res.status(200).json(await updateArticle(req.session.userId, id, articleId, data));
+        return res.status(200).json(await updateArticle(req.session.userId, id, articleId, data, imageUrl));
     } catch (error) {
         next(error);
     }

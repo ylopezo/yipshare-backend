@@ -30,6 +30,7 @@ export const ALL_PERMS = [
     'users:create.loans',
     'users:update',
     'users:update.self',
+    'users:update.self.pfp',
     'users:update.notifications.markRead',
     'users:update.loans.verificationCode',
     'users:update.loans.accept',
@@ -54,6 +55,7 @@ export const ALL_PERMS = [
     'roles:update',
     'roles.update.permissions',
     'roles:delete',
+    'admin:read.docs',
     "admin:test",
 ] as const;
 

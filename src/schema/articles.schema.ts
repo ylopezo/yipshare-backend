@@ -7,7 +7,6 @@ export const ArticleRequest = z.object({
     state: z.enum(["excellent", "good", "medium", "bad"]),
     maximumLendTime: z.int().min(1).max(30),
     loanDurations: z.array(z.int().min(1).max(30)).min(1).optional(),
-    image: z.string().startsWith('/uploads/').optional(),
 });
 
 export const ArticleParams = z.object({

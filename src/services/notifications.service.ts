@@ -13,7 +13,6 @@ export const getNotificationsService = async (userId: string) => db
         action: notifications.action,
         read: sql<boolean>`${notifications.readAt} IS NOT NULL`,
         createdAt: notifications.createdAt,
-        image: notifications.image
     })
     .from(notifications)
     .where(eq(notifications.userId, userId))
@@ -48,12 +47,11 @@ export const markNotificationAsRead = async (notificationId: string) => {
     if (!read) throw new NotFoundError('Notification not found or already marked as read')
 }
 
-export const createNotificationService = async (userId: string, header: string, body: string, action: JsonValue, image?: string, )=> {
+export const createNotificationService = async (userId: string, header: string, body: string, action: JsonValue)=> {
     const [notification] = await db.insert(notifications).values({
         userId: userId,
         header: header,
         body: body,
-        image: image,
         action: action
     }).returning();
     return notification;
