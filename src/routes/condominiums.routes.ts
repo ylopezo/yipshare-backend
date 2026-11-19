@@ -27,8 +27,22 @@ import {getIdFromParams} from "@/middlewares/condominiumGetter.middleware.ts";
 import {getReportsOfCondominium, patchReportState} from "@/controllers/reports.controller.ts";
 import {getReviewsOfCondominium} from "@/controllers/reviews.controller.ts";
 import {getLoansFromCondominium} from "@/controllers/loans.controller.ts";
+import {documentMulter} from "@/config/multer.ts";
+import {validPDF} from "@/utils/fileValidation.util.ts";
+import type {DiskFileHandle, FileHandlesFromSchema} from "@/types/files";
 
 const router = Router();
+
+const condominiumDocsSchema = {
+    ecrpcDocument: { required: true, validator: validPDF },
+    aanaDocument: { required: true, validator: validPDF },
+    ownerIneDocument: { required: true, validator: validPDF },
+    condominiumRfcDocument: { required: true, validator: validPDF },
+} as const;
+
+export const uploadCondominiumDocs = documentMulter.schema(condominiumDocsSchema);
+
+export type CondominiumDocHandles = FileHandlesFromSchema<typeof condominiumDocsSchema, DiskFileHandle>;
 
 router.post('/join', authenticationHandler, withAuthz(postJoinCondominium));
 router.get('/mine', authenticationHandler, withAuthz(getMyCondominiumsHandler));
@@ -39,7 +53,7 @@ router.post('/:id/units', authenticationHandler, getIdFromParams('id'), withPerm
 router.get('/:id/units/:unitId', authenticationHandler, getIdFromParams('id'), withPermissions('condominium:read.units') ,withAuthz(getCondominiumUnit));
 router.patch('/:id/units/:unitId', authenticationHandler, getIdFromParams('id'), withPermissions('condominium:update.units') ,withAuthz(patchCondominiumUnit));
 router.delete('/:id/units/:unitId', authenticationHandler, getIdFromParams('id'), withPermissions('condominium:delete.units') ,withAuthz(removeCondominiumUnit));
-router.post('/', authenticationHandler, withAuthz(postCondominium));
+router.post('/', authenticationHandler, withPermissions('condominium:create'), uploadCondominiumDocs, withAuthz<{ fileHandles: CondominiumDocHandles }>(postCondominium));
 router.patch('/:id', authenticationHandler, getIdFromParams('id'), withPermissions('condominium:update') ,withAuthz(patchCondominium));
 router.post('/:id/approve', authenticationHandler, getIdFromParams('id'), withPermissions('condominium:approve') ,withAuthz(approveCondominiumHandler));
 router.post('/:id/reject', authenticationHandler, getIdFromParams('id'), withPermissions('condominium:approve'), withAuthz(rejectCondominiumHandler));

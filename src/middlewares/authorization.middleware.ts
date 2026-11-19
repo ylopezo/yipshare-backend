@@ -6,15 +6,15 @@ import {permissionOverrides, permissions, rolePermissions, userRoles} from "@/db
 import {and, eq, isNull, or} from "drizzle-orm";
 import {ForbiddenError, UnauthorizedError} from "@/utils/errors";
 
-export interface AuthorizedRequest extends AuthenticatedRequest {
+export type AuthorizedRequest<TExtra = {}> = AuthenticatedRequest &{
     permissions: Set<string>;
-}
+} & TExtra;
 
-export const withAuthz = <T>(
-    handler: (req: AuthorizedRequest, res: Response, next: NextFunction) => Promise<T> | T
+export const withAuthz = <TExtra = {}, T = any>(
+    handler: (req: AuthorizedRequest<TExtra>, res: Response, next: NextFunction) => Promise<T> | T
 ): RequestHandler => {
     return (req, res, next) => {
-        Promise.resolve(handler(req as AuthorizedRequest, res, next)).catch(next);
+        Promise.resolve(handler(req as AuthorizedRequest<TExtra>, res, next)).catch(next);
     };
 };
 

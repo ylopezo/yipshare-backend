@@ -1,9 +1,15 @@
 import type { Request, Response, NextFunction } from 'express';
 import {AppError} from "@/utils/errors";
 import {z, ZodError} from "zod";
+import {cleanupFiles, extractFiles} from "@/utils/files.util.ts";
 
 
-const errorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
+const errorHandler = async (err: any, req: Request, res: Response, next: NextFunction) => {
+
+    const uploadedFiles = extractFiles(req);
+    if (uploadedFiles.length > 0) {
+        await cleanupFiles(uploadedFiles);
+    }
 
     if (res.headersSent) {
         return next(err);
