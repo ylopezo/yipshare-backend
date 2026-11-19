@@ -64,19 +64,19 @@ export const listArticles = async (userId: string, condominiumId: string, q: str
         .orderBy(desc(articles.articleId));
 };
 
-export const createArticle = async (userId: string, condominiumId: string, {category, ...data}: ArticleData) => {
+export const createArticle = async (image: string, userId: string, condominiumId: string, {category, ...data}: ArticleData) => {
     const categoryId = await findCategoryId(category);
 
     return db.transaction(async (tx) => {
         const [article] = await tx.insert(articles)
-            .values({...data, condominiumId, lendingUser: userId, availability: 'available'})
+            .values({...data, condominiumId, lendingUser: userId, availability: 'available', image})
             .returning();
         await tx.insert(articleCategories).values({articleId: article!.articleId, categoryId});
         return article;
     });
 };
 
-export const updateArticle = async (userId: string, condominiumId: string, articleId: string, {category, ...data}: ArticleData) => {
+export const updateArticle = async (userId: string, condominiumId: string, articleId: string, {category, ...data}: ArticleData, image?: string) => {
     const stored = await findArticle(condominiumId, articleId);
     if (stored.lendingUser !== userId) throw new NotFoundError("Article not found");
     if (stored.availability !== 'available') throw new ConflictError("Article is on loan");

@@ -4,8 +4,8 @@ import {
     createUserService,
     deleteUserService,
     getUserProfileService, getUserService, getUsersService,
-    modifyUserService
-} from "@/services/user.service.ts";
+    modifyUserService, uploadPFPService
+} from "@/services/users.service.ts";
 import {ModifyUserRequest, UserIdParams} from "@/schema/users.schema.ts";
 import {RegisterRequest} from "@/schema/auth.schema.ts";
 import {
@@ -13,6 +13,7 @@ import {
     deleteNotificationSelfService, getNotificationsService, markNotificationAsRead, markNotificationAsReadSelf,
 } from "@/services/notifications.service.ts";
 import {NotificationFetchIdParams} from "@/schema/notifications.schema.ts";
+import type {PFPImgHandles} from "@/routes/users.routes.ts";
 
 export const getListOfUsers = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
@@ -155,6 +156,18 @@ export const deleteNotificationSelf = async (req: AuthorizedRequest, res: Respon
     try {
         const params = NotificationFetchIdParams.parse(req.params);
         await deleteNotificationSelfService(req.session.userId, params.id);
+        return res.status(204).end();
+    } catch (error) {
+        next(error);
+    }
+}
+
+export const uploadPFP = async (req: AuthorizedRequest<{fileHandles: PFPImgHandles}>, res: Response, next: NextFunction) => {
+    try {
+        const {
+            image: [image]
+        } = req.fileHandles;
+        await uploadPFPService(req.session.userId, image!.url)
         return res.status(204).end();
     } catch (error) {
         next(error);
