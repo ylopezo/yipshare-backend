@@ -135,7 +135,7 @@ Content-Type: application/json
 {
   "loanId": "{{loanId}}",
   "text": "No devolvió el taladro",
-  "image": "https://example.com/evidencia.jpg"
+  "images": ["/uploads/evidencia1.jpg", "/uploads/evidencia2.jpg"]
 }
 
 ### Texto vacío -> 400
