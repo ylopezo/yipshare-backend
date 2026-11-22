@@ -1,8 +1,10 @@
 import Sqids from "sqids";
-import {env} from "@/env.ts";
-import {NotFoundError} from "@/utils/errors.ts";
+import { env } from "@/env.ts";
+import { NotFoundError } from "@/utils/errors.ts";
 
-export const CODE_ALPHABET = [...new Set(env.SQIDS_ALPHABET.toUpperCase())].filter((c) => c !== 'I' && c !== '1').join('');
+export const CODE_ALPHABET = [...new Set(env.SQIDS_ALPHABET.toUpperCase())]
+    .filter((c) => c !== "I" && c !== "1")
+    .join("");
 
 const sqids = new Sqids({
     alphabet: CODE_ALPHABET,
@@ -16,18 +18,15 @@ export function encodeInvCode(code: number): string {
         const mid = Math.ceil(len / 2);
         return `${unformattedCode.slice(0, mid)}-${unformattedCode.slice(mid)}`;
     } else {
-        return unformattedCode.match(/.{1,4}/g)!.join('-');
+        return unformattedCode.match(/.{1,4}/g)!.join("-");
     }
 }
 
 export function decodeInvCode(code: string): number {
-    const unformattedCode = code
-        .toUpperCase()
-        .replaceAll('-', '')
-        .replaceAll('I', 'L')
-        .replaceAll('1', 'L')
+    const unformattedCode = code.toUpperCase().replaceAll("-", "").replaceAll("I", "L").replaceAll("1", "L");
 
     const potentialCode = sqids.decode(unformattedCode);
-    if (potentialCode.length !== 1 || sqids.encode(potentialCode) != unformattedCode) throw new NotFoundError('Resource not found')
+    if (potentialCode.length !== 1 || sqids.encode(potentialCode) != unformattedCode)
+        throw new NotFoundError("Resource not found");
     return potentialCode[0]!;
 }

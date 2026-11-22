@@ -1,22 +1,23 @@
-import type {NextFunction, Request, Response} from "express";
+import type { NextFunction, Request, Response } from "express";
 import * as z from "zod";
 
 export const getIdFromBody = (fieldName: string) => {
-    return async function getCondominiumIdFromRequestBodyHandler(req: Request,
-                                                                 res: Response,
-                                                                 next: NextFunction): Promise<void> {
+    return async function getCondominiumIdFromRequestBodyHandler(
+        req: Request,
+        res: Response,
+        next: NextFunction,
+    ): Promise<void> {
         const value = req.body.fields[fieldName];
-        if (!value || typeof value !== 'string') {
+        if (!value || typeof value !== "string") {
             req.condominiumId = null;
             return;
         }
         req.condominiumId = value;
         next();
-    }
-}
-export const getIdFromParams = (paramName: string) =>
-    (req: Request, res: Response, next: NextFunction) => {
-        const value = req.params[paramName];
-        req.condominiumId = z.uuid().safeParse(value).success ? value as string : null;
-        next();
     };
+};
+export const getIdFromParams = (paramName: string) => (req: Request, res: Response, next: NextFunction) => {
+    const value = req.params[paramName];
+    req.condominiumId = z.uuid().safeParse(value).success ? (value as string) : null;
+    next();
+};

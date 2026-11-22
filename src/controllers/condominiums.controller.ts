@@ -1,5 +1,26 @@
-import {type Request, type Response, type NextFunction} from "express";
-import {getCondominiums, getMyCondominiums, getCondominiumById, rejectCondominium, getUnitsByCondominium, createCondominium, updateCondominium, deleteCondominium, approveCondominium, getUnitById, createUnit, updateUnit, deleteUnit, requestJoin, getMembers, getPendingMembers, approveMember, removeMember, rejectMember, setLoanAccess} from "@/services/condominiums.service.ts";
+import { type Request, type Response, type NextFunction } from "express";
+import {
+    getCondominiums,
+    getMyCondominiums,
+    getCondominiumById,
+    rejectCondominium,
+    getUnitsByCondominium,
+    createCondominium,
+    updateCondominium,
+    deleteCondominium,
+    approveCondominium,
+    getUnitById,
+    createUnit,
+    updateUnit,
+    deleteUnit,
+    requestJoin,
+    getMembers,
+    getPendingMembers,
+    approveMember,
+    removeMember,
+    rejectMember,
+    setLoanAccess,
+} from "@/services/condominiums.service.ts";
 import {
     CondominiumIdParams,
     CondominiumUnitParams,
@@ -12,9 +33,9 @@ import {
     ApproveMemberRequest,
     LoanAccessRequest,
 } from "@/schema/condominiums.schema.ts";
-import type {AuthorizedRequest} from "@/middlewares/authorization.middleware.ts";
-import {BadRequestError} from "@/utils/errors.ts";
-import type {CondominiumDocHandles} from "@/routes/condominiums.routes.ts";
+import type { AuthorizedRequest } from "@/middlewares/authorization.middleware.ts";
+import { BadRequestError } from "@/utils/errors.ts";
+import type { CondominiumDocHandles } from "@/routes/condominiums.routes.ts";
 
 export const getListOfCondominiums = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
@@ -23,27 +44,31 @@ export const getListOfCondominiums = async (req: AuthorizedRequest, res: Respons
     } catch (error) {
         next(error);
     }
-}
+};
 export const getCondominium = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
-    try{
-        const {id} = CondominiumIdParams.parse(req.params);
+    try {
+        const { id } = CondominiumIdParams.parse(req.params);
         const condominium = await getCondominiumById(id);
         return res.status(200).json(condominium);
     } catch (error) {
         next(error);
     }
-}
+};
 export const getCondominiumUnits = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
-    try{
-        const {id} = CondominiumIdParams.parse(req.params);
+    try {
+        const { id } = CondominiumIdParams.parse(req.params);
         const units = await getUnitsByCondominium(id);
         return res.status(200).json(units);
     } catch (error) {
         next(error);
     }
-}
+};
 
-export const postCondominium = async (req: AuthorizedRequest<{ fileHandles: CondominiumDocHandles }>, res: Response, next: NextFunction) => {
+export const postCondominium = async (
+    req: AuthorizedRequest<{ fileHandles: CondominiumDocHandles }>,
+    res: Response,
+    next: NextFunction,
+) => {
     try {
         const {
             ecrpcDocument: [ecrpc],
@@ -53,101 +78,96 @@ export const postCondominium = async (req: AuthorizedRequest<{ fileHandles: Cond
         } = req.fileHandles;
         const userId = req.session.userId;
         const data = CreateCondominiumRequest.parse(req.body);
-        const condominium = await createCondominium(
-            ecrpc!.url,
-            aana!.url,
-            ownerIne!.url,
-            rfc!.url,
-            data, userId);
+        const condominium = await createCondominium(ecrpc!.url, aana!.url, ownerIne!.url, rfc!.url, data, userId);
         return res.status(201).json(condominium);
     } catch (error) {
         next(error);
     }
-}
+};
 
 export const patchCondominium = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
-        const {id} = CondominiumIdParams.parse(req.params);
+        const { id } = CondominiumIdParams.parse(req.params);
         const data = UpdateCondominiumRequest.parse(req.body);
         const condominium = await updateCondominium(id, data);
         return res.status(200).json(condominium);
     } catch (error) {
         next(error);
     }
-}
+};
 
 export const removeCondominium = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
-        const {id} = CondominiumIdParams.parse(req.params);
+        const { id } = CondominiumIdParams.parse(req.params);
         await deleteCondominium(id);
         return res.status(204).end();
     } catch (error) {
         next(error);
     }
-}
+};
 
 export const approveCondominiumHandler = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
         const userId = req.session.userId;
-        const {id} = CondominiumIdParams.parse(req.params);
+        const { id } = CondominiumIdParams.parse(req.params);
         const condominium = await approveCondominium(id, userId);
         return res.status(200).json(condominium);
     } catch (error) {
         next(error);
     }
-}
+};
 
 export const rejectCondominiumHandler = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
-        const {id} = CondominiumIdParams.parse(req.params);
+        const { id } = CondominiumIdParams.parse(req.params);
         await rejectCondominium(id);
         return res.status(204).end();
     } catch (error) {
         next(error);
     }
-}
+};
 
 export const getCondominiumUnit = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
-        const {id, unitId} = CondominiumUnitParams.parse(req.params);
+        const { id, unitId } = CondominiumUnitParams.parse(req.params);
         const unit = await getUnitById(id, unitId);
         return res.status(200).json(unit);
     } catch (error) {
         next(error);
     }
-}
+};
 
 export const postCondominiumUnit = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
-        const {id} = CondominiumIdParams.parse(req.params);
+        const { id } = CondominiumIdParams.parse(req.params);
         const data = CreateCondominiumUnitRequest.parse(req.body);
         const unit = await createUnit(id, data);
         return res.status(201).json(unit);
     } catch (error) {
         next(error);
     }
-}
+};
 
 export const patchCondominiumUnit = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
-        const {id, unitId} = CondominiumUnitParams.parse(req.params);
+        const { id, unitId } = CondominiumUnitParams.parse(req.params);
         const data = UpdateCondominiumUnitRequest.parse(req.body);
         const unit = await updateUnit(id, unitId, data);
         return res.status(200).json(unit);
     } catch (error) {
         next(error);
     }
-}
+};
 
 export const removeCondominiumUnit = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
-        const {id, unitId} = CondominiumUnitParams.parse(req.params);
+        const { id, unitId } = CondominiumUnitParams.parse(req.params);
         await deleteUnit(id, unitId);
         return res.status(204).end();
     } catch (error) {
         next(error);
     }
-}
+};
 
 export const postJoinCondominium = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
@@ -157,48 +177,48 @@ export const postJoinCondominium = async (req: AuthorizedRequest, res: Response,
     } catch (error) {
         next(error);
     }
-}
+};
 
 export const getCondominiumMembers = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
-        const {id} = CondominiumIdParams.parse(req.params);
+        const { id } = CondominiumIdParams.parse(req.params);
         const members = await getMembers(id);
         return res.status(200).json(members);
     } catch (error) {
         next(error);
     }
-}
+};
 
 export const getCondominiumPendingMembers = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
-        const {id} = CondominiumIdParams.parse(req.params);
+        const { id } = CondominiumIdParams.parse(req.params);
         const pending = await getPendingMembers(id);
         return res.status(200).json(pending);
     } catch (error) {
         next(error);
     }
-}
+};
 
 export const approveCondominiumMember = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
-        const {id, userId} = MemberParams.parse(req.params);
-        const {unitId} = ApproveMemberRequest.parse(req.body ?? {});
+        const { id, userId } = MemberParams.parse(req.params);
+        const { unitId } = ApproveMemberRequest.parse(req.body ?? {});
         await approveMember(id, userId, unitId);
         return res.status(204).end();
     } catch (error) {
         next(error);
     }
-}
+};
 
 export const removeCondominiumMember = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
-        const {id, userId} = MemberParams.parse(req.params);
+        const { id, userId } = MemberParams.parse(req.params);
         await removeMember(id, userId, req.session.userId);
         return res.status(204).end();
     } catch (error) {
         next(error);
     }
-}
+};
 
 export const getMyCondominiumsHandler = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
@@ -206,26 +226,25 @@ export const getMyCondominiumsHandler = async (req: AuthorizedRequest, res: Resp
     } catch (error) {
         next(error);
     }
-}
-
+};
 
 export const rejectCondominiumMember = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
-        const {id, userId} = MemberParams.parse(req.params);
+        const { id, userId } = MemberParams.parse(req.params);
         await rejectMember(id, userId);
         return res.status(204).end();
     } catch (error) {
         next(error);
     }
-}
+};
 
 export const putMemberLoanAccess = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
-        const {id, userId} = MemberParams.parse(req.params);
-        const {allowed} = LoanAccessRequest.parse(req.body);
+        const { id, userId } = MemberParams.parse(req.params);
+        const { allowed } = LoanAccessRequest.parse(req.body);
         await setLoanAccess(id, userId, req.session.userId, allowed);
         return res.status(204).end();
     } catch (error) {
         next(error);
     }
-}
+};

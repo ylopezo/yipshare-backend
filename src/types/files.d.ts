@@ -1,6 +1,6 @@
-import type {FileSchema} from "@/middlewares/files.middleware.ts";
+import type { FileSchema } from "@/middlewares/files.middleware.ts";
 
-export type FileHandle = DiskFileHandle | MemoryFileHandle
+export type FileHandle = DiskFileHandle | MemoryFileHandle;
 
 export interface DiskFileHandle {
     id: string;
@@ -8,27 +8,25 @@ export interface DiskFileHandle {
     size: number;
     url: string;
     path: string;
-    kind: 'disk'
+    kind: "disk";
 }
 
 export interface MemoryFileHandle {
-    kind: 'memory'
+    kind: "memory";
     mimeType: string;
     size: number;
     buffer: Buffer;
 }
 
 export interface FieldRule<TOutput = DiskFileHandle> {
-    required?: boolean,
-    maxCount?: number
-    validator?: (file: Express.Multer.File) => boolean | Promise<boolean>
-    saveBuffer?: (file: Buffer) => Promise<{id: string, path: string}>
+    required?: boolean;
+    maxCount?: number;
+    validator?: (file: Express.Multer.File) => boolean | Promise<boolean>;
+    saveBuffer?: (file: Buffer) => Promise<{ id: string; path: string }>;
 }
 
-export type FileSchema = Record<string, FieldRule>
+export type FileSchema = Record<string, FieldRule>;
 
 export type FileHandlesFromSchema<TSchema extends FileSchema, THandle = FileHandle> = {
-    [K in keyof TSchema]: TSchema[K]['required'] extends true
-        ? THandle[]
-        : THandle[] | undefined;
-}
+    [K in keyof TSchema]: TSchema[K]["required"] extends true ? THandle[] : THandle[] | undefined;
+};

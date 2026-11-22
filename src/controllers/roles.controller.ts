@@ -1,22 +1,23 @@
-import type {AuthorizedRequest} from "@/middlewares/authorization.middleware.ts";
+import type { AuthorizedRequest } from "@/middlewares/authorization.middleware.ts";
 import {
-    createRoleService, deleteRoleService,
+    createRoleService,
+    deleteRoleService,
     getRoleByNameService,
     getRoleService,
     getRolesService,
-    updateRoleService
+    updateRoleService,
 } from "@/services/roles.service.ts";
-import {RoleCreateParams, RoleFetchByNameParams, RoleFetchIdParams} from "@/schema/roles.schema.ts";
-import type {NextFunction, Response} from "express";
+import { RoleCreateParams, RoleFetchByNameParams, RoleFetchIdParams } from "@/schema/roles.schema.ts";
+import type { NextFunction, Response } from "express";
 
 export const getAllRoles = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
         const roles = await getRolesService();
         return res.status(200).json(roles);
     } catch (e) {
-        next(e)
+        next(e);
     }
-}
+};
 
 export const getRole = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
@@ -24,9 +25,9 @@ export const getRole = async (req: AuthorizedRequest, res: Response, next: NextF
         const role = await getRoleService(params.id);
         return res.status(200).json(role);
     } catch (e) {
-        next(e)
+        next(e);
     }
-}
+};
 
 export const getRoleByName = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
@@ -34,9 +35,9 @@ export const getRoleByName = async (req: AuthorizedRequest, res: Response, next:
         const role = await getRoleByNameService(params.name);
         return res.status(200).json(role);
     } catch (e) {
-        next(e)
+        next(e);
     }
-}
+};
 
 export const createRole = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
@@ -44,9 +45,9 @@ export const createRole = async (req: AuthorizedRequest, res: Response, next: Ne
         const role = await createRoleService(body.name);
         return res.status(201).json(role);
     } catch (e) {
-        next(e)
+        next(e);
     }
-}
+};
 
 export const updateRole = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
@@ -55,9 +56,9 @@ export const updateRole = async (req: AuthorizedRequest, res: Response, next: Ne
         const role = await updateRoleService(params.id, body.name);
         return res.status(200).json(role);
     } catch (e) {
-        next(e)
+        next(e);
     }
-}
+};
 
 export const deleteRole = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
@@ -65,6 +66,6 @@ export const deleteRole = async (req: AuthorizedRequest, res: Response, next: Ne
         await deleteRoleService(params.id);
         return res.status(204).end();
     } catch (e) {
-        next(e)
+        next(e);
     }
-}
+};
