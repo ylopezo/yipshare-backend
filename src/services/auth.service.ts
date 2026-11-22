@@ -29,9 +29,9 @@ const issueSessionToken = async (userId: string) => {
 export const loginService = async (username: string,
     password: string) => {
     const [user] = await db.select().from(users).where(eq(users.username, username)).limit(1);
-    if (!user || !user.passwordHash) throw new NotFoundError('User Not Found');
-
-    if (!(await argon2.verify(user.passwordHash, password))) throw new UnauthorizedError();
+    if (!user || !user.passwordHash || !(await argon2.verify(user.passwordHash, password))) {
+        throw new UnauthorizedError('Invalid username or password');
+    }
 
     return await issueSessionToken(user.userId);
 }
