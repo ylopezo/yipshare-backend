@@ -191,10 +191,8 @@ export const rejectCondominium = async (id: string) => {
 
 const DOCUMENT_TYPES = ['ecrpcDocument', 'aanaDocument', 'ownerIneDocument', 'condominiumRfcDocument'] as const;
 
-// Documents are stored as "/docs/<id>"; the file id is what /uploads/docs/:id expects.
 const documentId = (url: string) => url.split('/').pop()!;
 
-// Empty once the request was approved or rejected: the documents are deleted for good at that point.
 export const getCondominiumDocuments = async (id: string) => {
     await getCondominiumById(id);
     const [row] = await db.select().from(temporaryCondominiumVerificationData)
@@ -211,7 +209,6 @@ const discardDocuments = async (tx: Tx, id: string) => {
     return row ? DOCUMENT_TYPES.map((type) => documentId(row[type])) : [];
 };
 
-// Runs after the transaction commits, so a rollback never leaves a row pointing at deleted files.
 const removeDocumentFiles = async (ids: string[]) => {
     const results = await Promise.allSettled(ids.map((fileId) => deleteFileService(env.UPLOADS_DIR, fileId)));
     results.forEach((r, i) => {
