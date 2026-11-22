@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import { type JWTPayload, jwtVerify } from "jose";
-import { getJwtSecret } from "@/config/jwt.ts";
+import { getJwtSecret, JWT_AUDIENCE, JWT_ISSUER } from "@/config/jwt.ts";
 import { db } from "@/db/db.ts";
 import { sessions } from "@/db/schema.ts";
 import { eq } from "drizzle-orm";
@@ -49,8 +49,8 @@ export async function authenticationHandler(req: Request, res: Response, next: N
 
         try {
             const verifiedData = await jwtVerify<SessionPayload>(token, getJwtSecret, {
-                issuer: 'https://yipshare.oelohey.dev',
-                audience: 'https://yipshare.oelohey.dev',
+                issuer: JWT_ISSUER,
+                audience: JWT_AUDIENCE,
             });
             payload = verifiedData.payload;
         } catch (err) {
