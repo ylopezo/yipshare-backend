@@ -2,7 +2,7 @@ import {db} from "@/db/db.ts";
 import {articles, loans, reportEvidences, reports, users} from "@/db/schema.ts";
 import {alias} from "drizzle-orm/pg-core";
 import {and, desc, eq, ne, or, sql} from "drizzle-orm";
-import {ConflictError,ForbiddenError, NotFoundError} from "@/utils/errors";
+import {ConflictError,ForbiddenError, NotFoundError} from "@/utils/errors.ts";
 import * as z from "zod";
 import {CreateReportRequest, UpdateReportStateRequest} from "@/schema/reports.schema.ts";
 

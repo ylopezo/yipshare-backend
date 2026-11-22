@@ -1,7 +1,7 @@
 import {db} from "@/db/db.ts";
 import {permissions, rolePermissions, roles} from "@/db/schema.ts";
 import {and, eq, inArray, ne} from "drizzle-orm";
-import {ConflictError, NotFoundError} from "@/utils/errors";
+import {ConflictError, NotFoundError} from "@/utils/errors.ts";
 
 export const getRoleService = async (id: string) => {
     const [role] = await db.select().from(roles).where(eq(roles.roleId, id)).limit(1);

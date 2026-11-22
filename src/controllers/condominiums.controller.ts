@@ -13,7 +13,7 @@ import {
     LoanAccessRequest,
 } from "@/schema/condominiums.schema.ts";
 import type {AuthorizedRequest} from "@/middlewares/authorization.middleware.ts";
-import {BadRequestError} from "@/utils/errors";
+import {BadRequestError} from "@/utils/errors.ts";
 import type {CondominiumDocHandles} from "@/routes/condominiums.routes.ts";
 
 export const getListOfCondominiums = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {

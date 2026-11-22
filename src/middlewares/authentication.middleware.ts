@@ -5,7 +5,7 @@ import { db } from "@/db/db.ts";
 import { sessions } from "@/db/schema.ts";
 import { eq } from "drizzle-orm";
 import { createHash } from "node:crypto";
-import { UnauthorizedError } from "@/utils/errors";
+import { UnauthorizedError } from "@/utils/errors.ts";
 
 export interface UserSession {
     tokenHash: string;

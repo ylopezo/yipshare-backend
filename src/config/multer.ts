@@ -4,7 +4,7 @@ import {env} from "@/env.ts";
 import * as fs from "node:fs";
 import path = require("node:path");
 import {memoryStorage, type Multer} from "multer";
-import {BadRequestError, UnsupportedMediaTypeError} from "@/utils/errors";
+import {BadRequestError, UnsupportedMediaTypeError} from "@/utils/errors.ts";
 import {type MulterWrapper, wrapMulter} from "@/utils/multer.util.ts";
 
 fs.mkdirSync(env.UPLOADS_DIR, { recursive: true });

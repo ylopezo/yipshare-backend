@@ -1,5 +1,5 @@
 import {db} from "@/db/db.ts";
-import {NotFoundError} from "@/utils/errors";
+import {NotFoundError} from "@/utils/errors.ts";
 import type {JsonValue} from "@/types/util";
 import {notifications} from "@/db/schema.ts";
 import {and, desc, eq, isNull, sql} from "drizzle-orm";

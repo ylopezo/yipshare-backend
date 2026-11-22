@@ -1,6 +1,6 @@
 import {stat} from "node:fs/promises";
 import {resolve, sep} from "node:path";
-import {BadRequestError, NotFoundError} from "@/utils/errors";
+import {BadRequestError, NotFoundError} from "@/utils/errors.ts";
 import path from "node:path";
 import {createReadStream} from "node:fs";
 import {fileTypeFromFile} from "file-type";
