@@ -1,5 +1,5 @@
 import {type Request, type Response, type NextFunction} from "express";
-import {getCondominiums, getMyCondominiums, getCondominiumById, rejectCondominium, getUnitsByCondominium, createCondominium, updateCondominium, deleteCondominium, approveCondominium, getUnitById, createUnit, updateUnit, deleteUnit, requestJoin, getMembers, getPendingMembers, approveMember, removeMember, rejectMember, setLoanAccess} from "@/services/condominiums.service.ts";
+import {getCondominiums, getMyCondominiums, getCondominiumById, rejectCondominium, getUnitsByCondominium, createCondominium, updateCondominium, deleteCondominium, approveCondominium, getUnitById, createUnit, updateUnit, deleteUnit, requestJoin, getMembers, getPendingMembers, approveMember, removeMember, rejectMember, setLoanAccess, getCondominiumDocuments} from "@/services/condominiums.service.ts";
 import {
     CondominiumIdParams,
     CondominiumUnitParams,
@@ -92,6 +92,15 @@ export const approveCondominiumHandler = async (req: AuthorizedRequest, res: Res
         const {id} = CondominiumIdParams.parse(req.params);
         const condominium = await approveCondominium(id, userId);
         return res.status(200).json(condominium);
+    } catch (error) {
+        next(error);
+    }
+}
+
+export const getCondominiumDocumentsHandler = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
+    try {
+        const {id} = CondominiumIdParams.parse(req.params);
+        return res.status(200).json(await getCondominiumDocuments(id));
     } catch (error) {
         next(error);
     }

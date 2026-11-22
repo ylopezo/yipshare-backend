@@ -19,7 +19,8 @@ import {
     getMyCondominiumsHandler,
     rejectCondominiumHandler,
     rejectCondominiumMember,
-    putMemberLoanAccess
+    putMemberLoanAccess,
+    getCondominiumDocumentsHandler
 } from "@/controllers/condominiums.controller.ts";
 import {authenticationHandler} from "@/middlewares/authentication.middleware.ts";
 import {withAuthz, withPermissions} from "@/middlewares/authorization.middleware.ts";
@@ -56,6 +57,7 @@ router.delete('/:id/units/:unitId', authenticationHandler, getIdFromParams('id')
 router.post('/', authenticationHandler, withPermissions('condominium:create'), uploadCondominiumDocs, withAuthz<{ fileHandles: CondominiumDocHandles }>(postCondominium));
 router.patch('/:id', authenticationHandler, getIdFromParams('id'), withPermissions('condominium:update') ,withAuthz(patchCondominium));
 router.post('/:id/approve', authenticationHandler, getIdFromParams('id'), withPermissions('condominium:approve') ,withAuthz(approveCondominiumHandler));
+router.get('/:id/documents', authenticationHandler, getIdFromParams('id'), withPermissions('admin:read.docs'), withAuthz(getCondominiumDocumentsHandler));
 router.post('/:id/reject', authenticationHandler, getIdFromParams('id'), withPermissions('condominium:approve'), withAuthz(rejectCondominiumHandler));
 router.delete('/:id', authenticationHandler, getIdFromParams('id'), withPermissions('condominium:delete') ,withAuthz(removeCondominium));
 router.get('/:id/members', authenticationHandler, getIdFromParams('id'), withPermissions('condominium:read.members'), withAuthz(getCondominiumMembers));
