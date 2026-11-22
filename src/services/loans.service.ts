@@ -2,7 +2,7 @@ import {db} from "@/db/db.ts";
 import {z} from "zod";
 import type {LoanRequest} from "@/schema/loans.schema.ts";
 import {articles, condominiumMembers, loans, notifications, userRoles, users} from "@/db/schema.ts";
-import {ConflictError, ForbiddenError, NotFoundError} from "@/utils/errors";
+import {ConflictError, ForbiddenError, NotFoundError} from "@/utils/errors.ts";
 import {and, desc, eq, gt, isNull, or, sql} from "drizzle-orm";
 import {alias} from "drizzle-orm/pg-core";
 import {generateVerificationCodeUtil, normalizeCode} from "@/utils/verificaton_code.util.ts";

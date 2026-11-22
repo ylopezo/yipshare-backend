@@ -4,7 +4,7 @@ import type {AuthenticatedRequest} from "@/middlewares/authentication.middleware
 import {db} from "@/db/db.ts";
 import {permissionOverrides, permissions, rolePermissions, userRoles} from "@/db/schema.ts";
 import {and, eq, isNull, or} from "drizzle-orm";
-import {ForbiddenError, UnauthorizedError} from "@/utils/errors";
+import {ForbiddenError, UnauthorizedError} from "@/utils/errors.ts";
 
 export type AuthorizedRequest<TExtra = {}> = AuthenticatedRequest &{
     permissions: Set<string>;

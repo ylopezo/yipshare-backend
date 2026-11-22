@@ -1,7 +1,7 @@
 import {db} from "@/db/db.ts";
 import {articleCategories, articles, categories, condominiumMembers, roles, userRoles, users} from "@/db/schema.ts";
 import {and, desc, eq, ilike, isNull, sql} from "drizzle-orm";
-import {ConflictError, ForbiddenError, NotFoundError} from "@/utils/errors";
+import {ConflictError, ForbiddenError, NotFoundError} from "@/utils/errors.ts";
 import * as z from "zod";
 import {ArticleRequest} from "@/schema/articles.schema.ts";
 

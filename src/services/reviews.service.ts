@@ -1,7 +1,7 @@
 import {db} from "@/db/db.ts";
 import {loans, reviews, users} from "@/db/schema.ts";
 import {and, desc, eq, sql} from "drizzle-orm";
-import {ConflictError, ForbiddenError, NotFoundError} from "@/utils/errors";
+import {ConflictError, ForbiddenError, NotFoundError} from "@/utils/errors.ts";
 import * as z from "zod";
 import {CondominiumReviewQuery, CreateReviewRequest} from "@/schema/reviews.schema.ts";
 import {articles} from "@/db/schema.ts";

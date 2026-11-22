@@ -1,6 +1,6 @@
 import { roles, sessions, userRoles, users } from "@/db/schema.ts";
 import { and, eq, inArray } from "drizzle-orm";
-import { ConflictError, InternalServerError, NotFoundError, UnauthorizedError } from "@/utils/errors.js";
+import { ConflictError, InternalServerError, NotFoundError, UnauthorizedError } from "@/utils/errors.ts";
 import * as argon2 from 'argon2';
 import { getJwtSecret, JWT_AUDIENCE, JWT_ISSUER } from "@/config/jwt.ts"; import { db } from "@/db/db.ts";
 import { createHash, randomBytes } from "node:crypto";

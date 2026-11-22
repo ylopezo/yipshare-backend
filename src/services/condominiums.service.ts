@@ -1,7 +1,7 @@
 import {db} from "@/db/db.ts";
 import {articles, condominiumMembers, condominiums, condominiumUnits, loans, notifications, pendingCondominiumMembers, permissionOverrides, permissions, roles, temporaryCondominiumVerificationData, userRoles, users} from "@/db/schema.ts";
 import {and, eq, getTableColumns, ilike, isNull, ne, sql} from "drizzle-orm";
-import {ConflictError, NotFoundError} from "@/utils/errors";
+import {ConflictError, NotFoundError} from "@/utils/errors.ts";
 import * as z from "zod";
 import {CreateCondominiumRequest, CreateCondominiumUnitRequest, JoinCondominiumRequest, UpdateCondominiumRequest} from "@/schema/condominiums.schema.ts";
 import {getRoleByNameService} from "@/services/roles.service.ts";

@@ -1,7 +1,7 @@
 import {db} from "@/db/db.ts";
 import {sessions, userRoles, users} from "@/db/schema.ts";
 import {and, eq, isNull, ne} from "drizzle-orm";
-import {ConflictError, NotFoundError, UnauthorizedError} from "@/utils/errors";
+import {ConflictError, NotFoundError, UnauthorizedError} from "@/utils/errors.ts";
 import * as argon2 from 'argon2';
 import {getRoleByNameService} from "@/services/roles.service.ts";
 

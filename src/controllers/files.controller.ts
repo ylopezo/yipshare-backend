@@ -3,7 +3,7 @@ import {FileRequestParams} from "@/schema/files.schema.ts";
 import {getFileService} from "@/services/uploads.service.ts";
 import {env} from "@/env.ts";
 import { pipeline } from 'node:stream';
-import {NotFoundError} from "@/utils/errors";
+import {NotFoundError} from "@/utils/errors.ts";
 
 interface StreamFileOptions {
     stream: NodeJS.ReadableStream;

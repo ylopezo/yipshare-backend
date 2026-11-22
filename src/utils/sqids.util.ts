@@ -1,6 +1,6 @@
 import Sqids from "sqids";
 import {env} from "@/env.ts";
-import {NotFoundError} from "@/utils/errors";
+import {NotFoundError} from "@/utils/errors.ts";
 
 export const CODE_ALPHABET = [...new Set(env.SQIDS_ALPHABET.toUpperCase())].filter((c) => c !== 'I' && c !== '1').join('');
 

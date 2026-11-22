@@ -1,4 +1,4 @@
-import {BadRequestError} from "@/utils/errors";
+import {BadRequestError} from "@/utils/errors.ts";
 import {type Multer} from "multer";
 import type {NextFunction, Request, RequestHandler, Response} from "express";
 import type {FileHandle, FileSchema} from "@/types/files";
