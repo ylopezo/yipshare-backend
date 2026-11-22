@@ -83,7 +83,7 @@ export const updateArticle = async (userId: string, condominiumId: string, artic
     const categoryId = await findCategoryId(category);
 
     return db.transaction(async (tx) => {
-        const [article] = await tx.update(articles).set(data)
+        const [article] = await tx.update(articles).set(image ? {...data, image} : data)
             .where(and(eq(articles.articleId, articleId), eq(articles.availability, 'available')))
             .returning();
         if (!article) throw new ConflictError("Article is on loan");

@@ -5,8 +5,11 @@ export const ArticleRequest = z.object({
     description: z.string().trim().min(10, "Description is required"),
     category: z.string().trim().min(1),
     state: z.enum(["excellent", "good", "medium", "bad"]),
-    maximumLendTime: z.int().min(1).max(30),
-    loanDurations: z.array(z.int().min(1).max(30)).min(1).optional(),
+    maximumLendTime: z.coerce.number().int().min(1).max(30),
+    loanDurations: z.preprocess(
+        (v) => (v === undefined ? v : [v].flat()),
+        z.array(z.coerce.number().int().min(1).max(30)).min(1).optional(),
+    ),
 });
 
 export const ArticleParams = z.object({
