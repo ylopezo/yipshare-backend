@@ -1,11 +1,11 @@
-import type {Request, Response, NextFunction, RequestHandler} from 'express';
-import {type JWTPayload, jwtVerify} from "jose";
-import {getJwtSecret} from "@/config/jwt.ts";
-import {db} from "@/db/db.ts";
-import {sessions} from "@/db/schema.ts";
-import {eq} from "drizzle-orm";
-import {createHash} from "node:crypto";
-import {UnauthorizedError} from "@/utils/errors";
+import type { Request, Response, NextFunction, RequestHandler } from 'express';
+import { type JWTPayload, jwtVerify } from "jose";
+import { getJwtSecret } from "@/config/jwt.ts";
+import { db } from "@/db/db.ts";
+import { sessions } from "@/db/schema.ts";
+import { eq } from "drizzle-orm";
+import { createHash } from "node:crypto";
+import { UnauthorizedError } from "@/utils/errors";
 
 export interface UserSession {
     tokenHash: string;
@@ -58,7 +58,6 @@ export async function authenticationHandler(req: Request, res: Response, next: N
         }
 
         if (typeof payload.sessionToken !== 'string') {
-            console.log(payload.sessionToken);
             throw new UnauthorizedError()
         }
 
@@ -74,7 +73,7 @@ export async function authenticationHandler(req: Request, res: Response, next: N
             throw new UnauthorizedError()
         }
 
-        req.session =  sessionObject;
+        req.session = sessionObject;
         next();
     } catch (internalError) {
         next(internalError);
