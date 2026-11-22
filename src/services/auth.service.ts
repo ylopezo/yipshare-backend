@@ -9,6 +9,23 @@ import { createUserService } from "@/services/users.service.ts";
 
 const SESSION_DURATION_MS = 30 * 24 * 60 * 60 * 1000;
 
+const issueSessionToken = async (userId: string) => {
+    const sessionToken = randomBytes(32).toString('hex');
+    const hash = createHash('sha256').update(sessionToken).digest('hex');
+    const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
+
+    await db.insert(sessions).values({ tokenHash: hash, userId: userId, expiresAt: expiresAt });
+
+    const secret = await getJwtSecret();
+
+    return await new SignJWT({ sessionToken: sessionToken })
+        .setProtectedHeader({ alg: 'HS256' })
+        .setSubject(userId)
+        .setIssuer(JWT_ISSUER)
+        .setAudience(JWT_AUDIENCE)
+        .sign(secret);
+}
+
 export const loginService = async (username: string,
     password: string) => {
     const [user] = await db.select().from(users).where(eq(users.username, username)).limit(1);
@@ -16,20 +33,7 @@ export const loginService = async (username: string,
 
     if (!(await argon2.verify(user.passwordHash, password))) throw new UnauthorizedError();
 
-    const sessionToken = randomBytes(32).toString('hex');
-    const hash = createHash('sha256').update(sessionToken).digest('hex');
-    const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
-
-    await db.insert(sessions).values({ tokenHash: hash, userId: user.userId, expiresAt: expiresAt });
-
-    const secret = await getJwtSecret();
-
-    return await new SignJWT({ sessionToken: sessionToken })
-        .setProtectedHeader({ alg: 'HS256' })
-        .setSubject(user.userId)
-        .setIssuer(JWT_ISSUER)
-        .setAudience(JWT_AUDIENCE)
-        .sign(secret);
+    return await issueSessionToken(user.userId);
 }
 
 export const registerService = async (name: string,
@@ -42,20 +46,7 @@ export const registerService = async (name: string,
     const user = await createUserService(name, paternalSurname, maternalSurname, email, phoneNumber, username, password);
     if (!user) throw new InternalServerError("Failed to register user");
 
-    const sessionToken = randomBytes(32).toString('hex');
-    const hash = createHash('sha256').update(sessionToken).digest('hex');
-    const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
-
-    await db.insert(sessions).values({ tokenHash: hash, userId: user.userId, expiresAt: expiresAt });
-
-    const secret = await getJwtSecret();
-
-    return await new SignJWT({ sessionToken: sessionToken })
-        .setProtectedHeader({ alg: 'HS256' })
-        .setSubject(user.userId)
-        .setIssuer(JWT_ISSUER)
-        .setAudience(JWT_AUDIENCE)
-        .sign(secret);
+    return await issueSessionToken(user.userId);
 }
 
 export const logoutService = async (sessionHash: string) => {
