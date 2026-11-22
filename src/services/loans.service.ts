@@ -1,12 +1,12 @@
-import {db} from "@/db/db.ts";
-import {z} from "zod";
-import type {LoanRequest} from "@/schema/loans.schema.ts";
-import {articles, condominiumMembers, loans, notifications, userRoles, users} from "@/db/schema.ts";
-import {ConflictError, ForbiddenError, NotFoundError} from "@/utils/errors.ts";
-import {and, desc, eq, gt, isNull, or, sql} from "drizzle-orm";
-import {alias} from "drizzle-orm/pg-core";
-import {generateVerificationCodeUtil, normalizeCode} from "@/utils/verificaton_code.util.ts";
-import {canRequestLoans} from "@/services/condominiums.service.ts";
+import { db } from "@/db/db.ts";
+import { z } from "zod";
+import type { LoanRequest } from "@/schema/loans.schema.ts";
+import { articles, condominiumMembers, loans, notifications, userRoles, users } from "@/db/schema.ts";
+import { ConflictError, ForbiddenError, NotFoundError } from "@/utils/errors.ts";
+import { and, desc, eq, gt, isNull, or, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
+import { generateVerificationCodeUtil, normalizeCode } from "@/utils/verification_code.util.ts"; 
+import { canRequestLoans } from "@/services/condominiums.service.ts";
 import crypto from "node:crypto";
 
 const CODE_LENGTH = 6;
@@ -48,26 +48,26 @@ const selectMyLoans = (userId: string) => db
     .innerJoin(articles, eq(articles.articleId, loans.articleId))
     .innerJoin(other, eq(other.userId, sql`CASE WHEN ${loans.lenderId} = ${userId} THEN ${loans.userId} ELSE ${loans.lenderId} END`));
 
-export const createLoanService = async (userId: string, {articleId, requestText, days}: z.infer<typeof LoanRequest>) => {
+export const createLoanService = async (userId: string, { articleId, requestText, days }: z.infer<typeof LoanRequest>) => {
     const [article] = await db.select().from(articles).where(and(eq(articles.articleId, articleId), isNull(articles.deletedAt))).limit(1);
     if (!article) throw new NotFoundError('Article not found');
     if (article.lendingUser === userId) throw new ConflictError("You can't borrow your own article");
     if (article.availability !== 'available') throw new ConflictError('Article is not available');
 
-    const [member] = await db.select({id: condominiumMembers.userId}).from(condominiumMembers)
+    const [member] = await db.select({ id: condominiumMembers.userId }).from(condominiumMembers)
         .where(and(eq(condominiumMembers.userId, userId), eq(condominiumMembers.condominiumId, article.condominiumId))).limit(1);
-    const [role] = await db.select({id: userRoles.uuid}).from(userRoles)
+    const [role] = await db.select({ id: userRoles.uuid }).from(userRoles)
         .where(and(eq(userRoles.userId, userId), eq(userRoles.condominiumId, article.condominiumId))).limit(1);
     if (!member && !role) throw new ForbiddenError('Not a member of this condominium');
     if (!(await canRequestLoans(userId, article.condominiumId))) throw new ForbiddenError('Loan access revoked');
 
-    const [pending] = await db.select({id: loans.loanId}).from(loans)
+    const [pending] = await db.select({ id: loans.loanId }).from(loans)
         .where(and(eq(loans.userId, userId), eq(loans.articleId, articleId), eq(loans.state, 'pending'))).limit(1);
     if (pending) throw new ConflictError('Request already pending');
 
     return db.transaction(async (tx) => {
         const [loan] = await tx.insert(loans)
-            .values({lenderId: article.lendingUser, userId, articleId, requestText, days})
+            .values({ lenderId: article.lendingUser, userId, articleId, requestText, days })
             .returning(safeLoanFields);
         if (!loan) throw new ConflictError('Failed to create the loan');
 
@@ -75,7 +75,7 @@ export const createLoanService = async (userId: string, {articleId, requestText,
             userId: article.lendingUser,
             header: 'Nueva solicitud de préstamo',
             body: `Alguien quiere tu artículo «${article.name}».`,
-            action: {type: 'loan_requested', loanId: loan.loanId},
+            action: { type: 'loan_requested', loanId: loan.loanId },
         });
         return loan;
     });
@@ -140,13 +140,13 @@ export const getLoanFromIdSelfService = async (userId: string, loanId: string) =
 export const answerLoanRequestService = async (lenderId: string, loanId: string, answer: 'accepted' | 'rejected') => {
     await db.transaction(async (tx) => {
         const [loan] = await tx.update(loans)
-            .set({state: answer})
+            .set({ state: answer })
             .where(and(eq(loans.loanId, loanId), eq(loans.lenderId, lenderId), eq(loans.state, 'pending')))
             .returning();
         if (!loan) throw new ConflictError('Loan request is not pending');
 
         if (answer === 'accepted') {
-            await tx.update(articles).set({availability: 'not_available'}).where(eq(articles.articleId, loan.articleId));
+            await tx.update(articles).set({ availability: 'not_available' }).where(eq(articles.articleId, loan.articleId));
         }
         await tx.insert(notifications).values({
             userId: loan.userId,
@@ -154,7 +154,7 @@ export const answerLoanRequestService = async (lenderId: string, loanId: string,
             body: answer === 'accepted'
                 ? 'Tu solicitud de préstamo fue aceptada. Ponte de acuerdo para recogerlo.'
                 : 'Tu solicitud de préstamo fue rechazada.',
-            action: {type: answer === 'accepted' ? 'loan_accepted' : 'loan_rejected', loanId},
+            action: { type: answer === 'accepted' ? 'loan_accepted' : 'loan_rejected', loanId },
         });
     });
     return getLoanFromIdSelfService(lenderId, loanId);
@@ -175,7 +175,7 @@ export const generateVerificationCodeService = async (lenderId: string, loanId: 
         .returning();
 
     if (!loan) throw new NotFoundError('Loan not found or not active.');
-    return {code: loan.confirmationCode};
+    return { code: loan.confirmationCode };
 }
 
 export const confirmCodeService = async (userId: string, loanId: string, verificationCode: string) => {
@@ -198,7 +198,7 @@ export const confirmCodeService = async (userId: string, loanId: string, verific
                 state: returning ? 'returned' : 'on_loan',
                 confirmationCode: null,
                 confirmationCodeExpiry: null,
-                ...(returning ? {returnTime: new Date()} : {confirmationTime: new Date()}),
+                ...(returning ? { returnTime: new Date() } : { confirmationTime: new Date() }),
             }).where(and(
                 eq(loans.userId, userId),
                 eq(loans.loanId, loanId),
@@ -208,7 +208,7 @@ export const confirmCodeService = async (userId: string, loanId: string, verific
             )).returning();
         if (!loan) throw new ConflictError('Loan state changed or confirmation code expired. Please try again.');
 
-        if (returning) await tx.update(articles).set({availability: 'available'}).where(eq(articles.articleId, loan.articleId));
+        if (returning) await tx.update(articles).set({ availability: 'available' }).where(eq(articles.articleId, loan.articleId));
     });
     return getLoanFromIdSelfService(userId, loanId);
 }
