@@ -1,0 +1,14 @@
+### Health check (debe responder {"status":"ok"})
+GET localhost:3000/health
+
+### Ruta inexistente (debe responder 404 en JSON)
+GET localhost:3000/ruta-que-no-existe
+
+### Login con usuario inexistente (debe responder 401)
+POST localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "username": "no_existe",
+  "password": "Test1235@"
+}
