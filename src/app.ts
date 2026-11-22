@@ -25,6 +25,9 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json())
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'ok' });
+});
 app.use('/auth', authRoutes);
 app.use('/condominiums', condominiumRoutes);
 app.use('/users', usersRoutes);
@@ -35,4 +38,7 @@ app.use('/condominiums', articleRoutes);
 app.use('/roles', rolesRoutes);
 app.use('/loans', loansRoutes);
 app.use('/uploads', uploadsRoutes);
+app.use((req, res) => {
+    res.status(404).json({ success: false, message: 'Route not found' });
+});
 app.use(errorHandler);
