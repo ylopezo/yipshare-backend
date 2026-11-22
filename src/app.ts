@@ -6,7 +6,6 @@ import reportRoutes from "@/routes/reports.routes.ts";
 import reviewRoutes from "@/routes/reviews.routes.ts";
 import articleRoutes from "@/routes/articles.routes.ts";
 import usersRoutes from "@/routes/users.routes.ts";
-import router from "@/routes/auth.routes.ts";
 import notificationsRoutes from "@/routes/notifications.routes.ts";
 import rolesRoutes from "@/routes/roles.routes.ts";
 import loansRoutes from "@/routes/loans.routes.ts";
