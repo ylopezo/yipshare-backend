@@ -1,5 +1,5 @@
-import type {UserSession} from "@/middlewares/authentication.middleware.ts";
-import type {FileHandle} from "@/types/files";
+import type { UserSession } from "@/middlewares/authentication.middleware.ts";
+import type { FileHandle } from "@/types/files";
 
 declare global {
     namespace Express {
@@ -7,7 +7,7 @@ declare global {
             session?: UserSession;
             permissions?: Set<string>;
             condominiumId?: string | null;
-            fileHandles?:  Record<string, FileHandle[] | undefined>;
+            fileHandles?: Record<string, FileHandle[] | undefined>;
         }
     }
 }

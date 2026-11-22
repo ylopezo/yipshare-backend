@@ -1,9 +1,9 @@
-import {db} from "@/db/db.ts";
-import {sessions, userRoles, users} from "@/db/schema.ts";
-import {and, eq, isNull, ne} from "drizzle-orm";
-import {ConflictError, NotFoundError, UnauthorizedError} from "@/utils/errors";
-import * as argon2 from 'argon2';
-import {getRoleByNameService} from "@/services/roles.service.ts";
+import { db } from "@/db/db.ts";
+import { sessions, userRoles, users } from "@/db/schema.ts";
+import { and, eq, isNull, ne } from "drizzle-orm";
+import { ConflictError, NotFoundError, UnauthorizedError } from "@/utils/errors.ts";
+import * as argon2 from "argon2";
+import { getRoleByNameService } from "@/services/roles.service.ts";
 
 const publicUserColumns = {
     userId: users.userId,
@@ -21,37 +21,48 @@ const safeUserColumns = {
 };
 
 export const getUsersService = async () => {
-    return db.select(safeUserColumns).from(users).where(ne(users.state, 'deleted'));
-}
+    return db.select(safeUserColumns).from(users).where(ne(users.state, "deleted"));
+};
 
 export const getUserService = async (id: string) => {
-    const [user] = await db.select(safeUserColumns).from(users).where(and(eq(users.userId, id), ne(users.state, 'deleted')));
-    if (!user) throw new NotFoundError('User not found');
+    const [user] = await db
+        .select(safeUserColumns)
+        .from(users)
+        .where(and(eq(users.userId, id), ne(users.state, "deleted")));
+    if (!user) throw new NotFoundError("User not found");
     return user;
-}
+};
 
 export const getUserProfileService = async (id: string) => {
-    const [user] = await db.select(publicUserColumns).from(users).where(and(eq(users.userId, id), ne(users.state, 'deleted')));
-    if (!user) throw new NotFoundError('User not found');
+    const [user] = await db
+        .select(publicUserColumns)
+        .from(users)
+        .where(and(eq(users.userId, id), ne(users.state, "deleted")));
+    if (!user) throw new NotFoundError("User not found");
     return user;
-}
+};
 
-export const modifyUserService = async (userId: string,
-                                        name?: string | undefined,
-                                        paternalSurname?: string | undefined,
-                                        maternalSurname?: string | undefined,
-                                        email?: string | undefined,
-                                        phoneNumber?: string | undefined,
-                                        username?: string | undefined,
-                                        password?: string | undefined,
-                                        currentPassword?: string | undefined) => {
-
+export const modifyUserService = async (
+    userId: string,
+    name?: string | undefined,
+    paternalSurname?: string | undefined,
+    maternalSurname?: string | undefined,
+    email?: string | undefined,
+    phoneNumber?: string | undefined,
+    username?: string | undefined,
+    password?: string | undefined,
+    currentPassword?: string | undefined,
+) => {
     await validateConflict(username, email, phoneNumber, userId);
 
     if (password && currentPassword !== undefined) {
-        const [stored] = await db.select({passwordHash: users.passwordHash}).from(users).where(eq(users.userId, userId)).limit(1);
+        const [stored] = await db
+            .select({ passwordHash: users.passwordHash })
+            .from(users)
+            .where(eq(users.userId, userId))
+            .limit(1);
         if (!stored?.passwordHash || !(await argon2.verify(stored.passwordHash, currentPassword))) {
-            throw new UnauthorizedError('Wrong password');
+            throw new UnauthorizedError("Wrong password");
         }
     }
 
@@ -70,24 +81,42 @@ export const modifyUserService = async (userId: string,
         return existingUser;
     }
 
-    const [user] = await db
-        .update(users)
-        .set(updateData)
-        .where(eq(users.userId, userId))
-        .returning(safeUserColumns);
+    const [user] = await db.update(users).set(updateData).where(eq(users.userId, userId)).returning(safeUserColumns);
 
-
-    if (!user) throw new NotFoundError('User not found');
+    if (!user) throw new NotFoundError("User not found");
 
     return user;
-}
+};
 
-async function validateConflict(username: string | undefined, email: string | undefined, phoneNumber: string | undefined, userId?: string) {
+async function validateConflict(
+    username: string | undefined,
+    email: string | undefined,
+    phoneNumber: string | undefined,
+    userId?: string,
+) {
     const notSelf = userId ? ne(users.userId, userId) : undefined;
     const [[conflictingUsername], [conflictingEmail], [conflictingPhoneNumber]] = await Promise.all([
-        username ? db.select().from(users).where(and(eq(users.username, username), notSelf)).limit(1) : [null],
-        email ? db.select().from(users).where(and(eq(users.email, email), notSelf)).limit(1) : [null],
-        phoneNumber ? db.select().from(users).where(and(eq(users.phoneNumber, phoneNumber), notSelf)).limit(1) : [null],
+        username
+            ? db
+                  .select()
+                  .from(users)
+                  .where(and(eq(users.username, username), notSelf))
+                  .limit(1)
+            : [null],
+        email
+            ? db
+                  .select()
+                  .from(users)
+                  .where(and(eq(users.email, email), notSelf))
+                  .limit(1)
+            : [null],
+        phoneNumber
+            ? db
+                  .select()
+                  .from(users)
+                  .where(and(eq(users.phoneNumber, phoneNumber), notSelf))
+                  .limit(1)
+            : [null],
     ]);
 
     if (conflictingUsername) throw new ConflictError(`The username \'${username}\' is already registered.\'`);
@@ -95,58 +124,62 @@ async function validateConflict(username: string | undefined, email: string | un
     if (conflictingPhoneNumber) throw new ConflictError(`The phone \'${phoneNumber}\' is already registered.`);
 }
 
-export const createUserService = async (name: string,
-                                        paternalSurname: string,
-                                        maternalSurname: string,
-                                        email: string,
-                                        phoneNumber: string,
-                                        username: string,
-                                        password: string) => {
-
+export const createUserService = async (
+    name: string,
+    paternalSurname: string,
+    maternalSurname: string,
+    email: string,
+    phoneNumber: string,
+    username: string,
+    password: string,
+) => {
     await validateConflict(username, email, phoneNumber);
-    const userRole = await getRoleByNameService('user');
+    const userRole = await getRoleByNameService("user");
     const passwordHash = await argon2.hash(password);
 
     return db.transaction(async (tx) => {
-        const [user] = await tx.insert(users).values({
-            username : username,
-            email: email,
-            passwordHash : passwordHash,
-            paternalSurname: paternalSurname,
-            maternalSurname: maternalSurname,
-            name: name,
-            phoneNumber : phoneNumber,
-        }).returning(safeUserColumns);
+        const [user] = await tx
+            .insert(users)
+            .values({
+                username: username,
+                email: email,
+                passwordHash: passwordHash,
+                paternalSurname: paternalSurname,
+                maternalSurname: maternalSurname,
+                name: name,
+                phoneNumber: phoneNumber,
+            })
+            .returning(safeUserColumns);
 
-        if (user) await tx.insert(userRoles).values({userId: user.userId, roleId: userRole.roleId, condominiumId: null, isGlobal: true});
+        if (user)
+            await tx
+                .insert(userRoles)
+                .values({ userId: user.userId, roleId: userRole.roleId, condominiumId: null, isGlobal: true });
         return user;
     });
-}
+};
 
 export const deleteUserService = async (id: string) => {
     const [deleted] = await db
         .update(users)
         .set({
             deletedAt: new Date(),
-            state: 'deleted',
+            state: "deleted",
             email: null,
             username: null,
             phoneNumber: null,
-            name: 'Deleted User',
+            name: "Deleted User",
             paternalSurname: null,
             maternalSurname: null,
             passwordHash: null,
         })
         .where(and(eq(users.userId, id), isNull(users.deletedAt)))
         .returning({ userId: users.userId });
-    if (!deleted) throw new NotFoundError('User not found');
+    if (!deleted) throw new NotFoundError("User not found");
     await db.delete(sessions).where(eq(sessions.userId, id));
-}
+};
 
 export const uploadPFPService = async (userId: string, image: string) => {
-    const [user] = await db.update(users)
-        .set({profile_picture : image})
-        .where(eq(users.userId, userId))
-        .returning();
+    const [user] = await db.update(users).set({ profile_picture: image }).where(eq(users.userId, userId)).returning();
     return user;
-}
+};

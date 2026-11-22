@@ -1,13 +1,14 @@
-import type {AuthorizedRequest} from "@/middlewares/authorization.middleware.ts";
-import type {NextFunction, Response} from "express";
+import type { AuthorizedRequest } from "@/middlewares/authorization.middleware.ts";
+import type { NextFunction, Response } from "express";
 import {
     createNotificationService,
     deleteNotificationService,
-    getNotificationsService, markNotificationAsRead
+    getNotificationsService,
+    markNotificationAsRead,
 } from "@/services/notifications.service.ts";
-import {getNotificationService} from "@/services/notifications.service.ts";
-import {NotificationCreate, NotificationFetchIdParams} from "@/schema/notifications.schema.ts";
-import {UserIdParams} from "@/schema/users.schema.ts";
+import { getNotificationService } from "@/services/notifications.service.ts";
+import { NotificationCreate, NotificationFetchIdParams } from "@/schema/notifications.schema.ts";
+import { UserIdParams } from "@/schema/users.schema.ts";
 
 export const getNotifications = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
@@ -16,7 +17,7 @@ export const getNotifications = async (req: AuthorizedRequest, res: Response, ne
     } catch (error) {
         next(error);
     }
-}
+};
 
 export const getNotification = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
@@ -25,7 +26,7 @@ export const getNotification = async (req: AuthorizedRequest, res: Response, nex
     } catch (error) {
         next(error);
     }
-}
+};
 export const createNotification = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
         const body = NotificationCreate.parse(req.body);
@@ -33,17 +34,17 @@ export const createNotification = async (req: AuthorizedRequest, res: Response, 
     } catch (error) {
         next(error);
     }
-}
+};
 
 export const deleteNotification = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
         const params = NotificationFetchIdParams.parse(req.params);
-        await deleteNotificationService(params.id)
+        await deleteNotificationService(params.id);
         return res.status(204).end();
     } catch (error) {
         next(error);
     }
-}
+};
 
 export const readNotification = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
@@ -53,4 +54,4 @@ export const readNotification = async (req: AuthorizedRequest, res: Response, ne
     } catch (error) {
         next(error);
     }
-}
+};

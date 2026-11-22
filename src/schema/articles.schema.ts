@@ -1,4 +1,4 @@
-import {z} from "zod";
+import { z } from "zod";
 
 export const ArticleRequest = z.object({
     name: z.string().trim().min(1, "Name is required"),
@@ -15,5 +15,5 @@ export const ArticleParams = z.object({
 });
 
 export const ArticleQuery = z.object({
-   q: z.string().trim().default('') ,
+    q: z.string().trim().default(""),
 });
