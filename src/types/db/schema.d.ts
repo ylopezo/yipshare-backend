@@ -1,12 +1,18 @@
 import {
     articles,
     categories,
-    condominiums, condominiumUnits, loans, notifications,
-    permissions, reports, reviews,
+    condominiums,
+    condominiumUnits,
+    loans,
+    notifications,
+    permissions,
+    reports,
+    reviews,
     roles,
     sessions,
-    temporaryCondominiumVerificationData, userRoles,
-    users
+    temporaryCondominiumVerificationData,
+    userRoles,
+    users,
 } from "@/db/schema.ts";
 
 type RoleSelectType = typeof roles.$inferSelect;
@@ -26,7 +32,7 @@ type SessionInsertType = typeof sessions.$inferInsert;
 
 type CondominiumSelectType = typeof condominiums.$inferSelect;
 type CondominiumInsertType = typeof condominiums.$inferInsert;
-type CondominiumExportType = Omit<CondominiumSelectType, 'shortCode'> & {
+type CondominiumExportType = Omit<CondominiumSelectType, "shortCode"> & {
     code: string;
 };
 

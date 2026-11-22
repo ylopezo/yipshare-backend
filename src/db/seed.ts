@@ -2,8 +2,8 @@ import "dotenv/config";
 import { db } from "@/db/db.ts";
 import { categories, permissions, roles, rolePermissions, users, userRoles } from "@/db/schema.ts";
 import { eq } from "drizzle-orm";
-import {ALL_PERMS} from "@/types/permissions.ts";
-import {env} from "@/env.ts";
+import { ALL_PERMS } from "@/types/permissions.ts";
+import { env } from "@/env.ts";
 import * as argon2 from "argon2";
 
 async function seed() {
@@ -23,10 +23,18 @@ async function seed() {
 
     await db
         .insert(categories)
-        .values([
-            "Herramientas", "Electrodomésticos", "Jardinería", "Cocina",
-            "Limpieza", "Electrónica", "Automotriz", "Otros",
-        ].map((name) => ({ name })))
+        .values(
+            [
+                "Herramientas",
+                "Electrodomésticos",
+                "Jardinería",
+                "Cocina",
+                "Limpieza",
+                "Electrónica",
+                "Automotriz",
+                "Otros",
+            ].map((name) => ({ name })),
+        )
         .onConflictDoNothing({ target: categories.name });
 
     const allDbPermissions = await db.select().from(permissions);
@@ -49,7 +57,7 @@ async function seed() {
                     roleId: superAdminRole.roleId,
                     permissionId: perm.permissionId,
                     allowed: true,
-                }))
+                })),
             )
             .onConflictDoNothing();
     }
@@ -63,9 +71,7 @@ async function seed() {
         })
         .returning();
 
-    const filteredPermissions = globalPermissions.filter(
-        (perm) => perm.name !== "admin:test"
-    );
+    const filteredPermissions = globalPermissions.filter((perm) => perm.name !== "admin:test");
 
     if (adminRole && filteredPermissions.length > 0) {
         await db
@@ -75,7 +81,7 @@ async function seed() {
                     roleId: adminRole.roleId,
                     permissionId: perm.permissionId,
                     allowed: true,
-                }))
+                })),
             )
             .onConflictDoNothing();
     }
@@ -90,31 +96,57 @@ async function seed() {
         if (role && granted.length > 0) {
             await db
                 .insert(rolePermissions)
-                .values(granted.map((perm) => ({ roleId: role.roleId, permissionId: perm.permissionId, allowed: true })))
+                .values(
+                    granted.map((perm) => ({ roleId: role.roleId, permissionId: perm.permissionId, allowed: true })),
+                )
                 .onConflictDoNothing();
         }
         return role;
     };
 
     const userRole = await grantRole("user", [
-        "users:read.self", "users:read.profile", "users:update.self", "users:delete.self",
-        "users:read.notifications", "users:update.notifications.markRead", "users:delete.notifications",
-        "users:read.loans.all", "users:read.loans", "users:create.loans",
-        "users:update.loans.verificationCode", "users:update.loans.accept", "users:update.loans.return",
-        "users:create.reports", "users:read.reports.all", "users:create.reviews", "users:read.reviews.all",
+        "users:read.self",
+        "users:read.profile",
+        "users:update.self",
+        "users:delete.self",
+        "users:read.notifications",
+        "users:update.notifications.markRead",
+        "users:delete.notifications",
+        "users:read.loans.all",
+        "users:read.loans",
+        "users:create.loans",
+        "users:update.loans.verificationCode",
+        "users:update.loans.accept",
+        "users:update.loans.return",
+        "users:create.reports",
+        "users:read.reports.all",
+        "users:create.reviews",
+        "users:read.reviews.all",
     ]);
 
     const residentPermissions = [
-        "condominium:read", "condominium:read.articles", "condominium:read.articles.all",
-        "condominium:create.articles", "condominium:update.articles", "condominium:delete.articles",
+        "condominium:read",
+        "condominium:read.articles",
+        "condominium:read.articles.all",
+        "condominium:create.articles",
+        "condominium:update.articles",
+        "condominium:delete.articles",
     ];
     await grantRole("resident", residentPermissions);
     await grantRole("condominium_admin", [
         ...residentPermissions,
-        "condominium:update", "condominium:read.units", "condominium:create.units", "condominium:update.units",
-        "condominium:delete.units", "condominium:read.members", "condominium:approve.members",
-        "condominium:update.members", "condominium:delete.members", "condominium:read.loans.all",
-        "report:read", "report:update",
+        "condominium:update",
+        "condominium:read.units",
+        "condominium:create.units",
+        "condominium:update.units",
+        "condominium:delete.units",
+        "condominium:read.members",
+        "condominium:approve.members",
+        "condominium:update.members",
+        "condominium:delete.members",
+        "condominium:read.loans.all",
+        "report:read",
+        "report:update",
     ]);
 
     if (userRole) {
@@ -122,7 +154,14 @@ async function seed() {
         if (everyone.length > 0) {
             await db
                 .insert(userRoles)
-                .values(everyone.map(({ userId }) => ({ userId, roleId: userRole.roleId, condominiumId: null, isGlobal: true })))
+                .values(
+                    everyone.map(({ userId }) => ({
+                        userId,
+                        roleId: userRole.roleId,
+                        condominiumId: null,
+                        isGlobal: true,
+                    })),
+                )
                 .onConflictDoNothing();
         }
     }
@@ -190,7 +229,6 @@ async function seed() {
     console.log("Seeding complete!");
     process.exit(0);
 }
-
 
 seed().catch((err) => {
     console.error("Seed failed:", err);

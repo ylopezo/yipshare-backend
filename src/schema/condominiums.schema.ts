@@ -1,4 +1,4 @@
-import * as z from 'zod';
+import * as z from "zod";
 
 export const CondominiumIdParams = z.object({
     id: z.uuid(),
@@ -17,8 +17,10 @@ export const CreateCondominiumRequest = CondominiumAddressRequest.extend({
     units: z.int().min(1).max(500).optional(),
 });
 
-export const UpdateCondominiumRequest = CondominiumAddressRequest.partial()
-    .refine((data) => Object.keys(data).length > 0, "At least one field is required");
+export const UpdateCondominiumRequest = CondominiumAddressRequest.partial().refine(
+    (data) => Object.keys(data).length > 0,
+    "At least one field is required",
+);
 export const CondominiumUnitParams = z.object({
     id: z.uuid(),
     unitId: z.uuid(),
@@ -31,7 +33,10 @@ export const CreateCondominiumUnitRequest = z.object({
 export const UpdateCondominiumUnitRequest = CreateCondominiumUnitRequest;
 
 export const JoinCondominiumRequest = z.object({
-    code: z.string().transform((s) => s.trim().toUpperCase().replaceAll('-', '')).pipe(z.string().min(6, "Code must be 6 to 8 characters").max(8, "Code must be 6 to 8 characters")),
+    code: z
+        .string()
+        .transform((s) => s.trim().toUpperCase().replaceAll("-", ""))
+        .pipe(z.string().min(6, "Code must be 6 to 8 characters").max(8, "Code must be 6 to 8 characters")),
     unit: z.string().trim().min(1, "Department number is required"),
     unitId: z.uuid().optional(),
 });
