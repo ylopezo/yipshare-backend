@@ -1,4 +1,4 @@
-import {stat} from "node:fs/promises";
+import {rm, stat} from "node:fs/promises";
 import {resolve, sep} from "node:path";
 import {BadRequestError, NotFoundError} from "@/utils/errors";
 import path from "node:path";
@@ -6,7 +6,7 @@ import {createReadStream} from "node:fs";
 import {fileTypeFromFile} from "file-type";
 
 
-export const getFileService = async (base: string, uuid: string) => {
+const resolveFilePath = (base: string, uuid: string) => {
     if (uuid.length < 4) {
         throw new BadRequestError('Invalid file ID');
     }
@@ -17,6 +17,14 @@ export const getFileService = async (base: string, uuid: string) => {
     if (!resolvedPath.startsWith(root + sep)) {
         throw new BadRequestError('Invalid file path');
     }
+
+    return resolvedPath;
+};
+
+export const deleteFileService = async (base: string, uuid: string) => rm(resolveFilePath(base, uuid), {force: true});
+
+export const getFileService = async (base: string, uuid: string) => {
+    const resolvedPath = resolveFilePath(base, uuid);
 
     const fileStat = await stat(resolvedPath).catch(() => null);
     if (!fileStat?.isFile()) {
