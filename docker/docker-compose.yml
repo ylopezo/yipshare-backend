@@ -4,8 +4,6 @@ services:
       context: ..
       dockerfile: docker/Dockerfile
     restart: unless-stopped
-    ports:
-      - "4600:3000"
     volumes:
       - /mnt/app_data:/usr/src/app/data
     deploy:
