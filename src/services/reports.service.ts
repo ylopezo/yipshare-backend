@@ -14,7 +14,7 @@ export const createReport = async (authorId: string, {loanId, text}: CreateRepor
     if (!loan) throw new NotFoundError("Loan not found");
     if (loan.lenderId !== authorId && loan.userId !== authorId)
         throw new ForbiddenError("Not part of this loan");
-    if (loan.state === 'pending') //this part will change, cuz the loan state 'rejected' is not completed, we have to put on it || loan.state === 'rejected')
+    if (loan.state === 'pending' || loan.state === 'rejected')
         throw new ForbiddenError("Loan has not been accepted yet");
 
     const [existingReport] = await db

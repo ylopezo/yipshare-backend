@@ -13,6 +13,7 @@ const publicUserColumns = {
     phoneNumber: users.phoneNumber,
     username: users.username,
     computedRating: users.computedRating,
+    profilePicture: users.profile_picture,
 };
 
 const safeUserColumns = {
