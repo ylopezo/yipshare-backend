@@ -4,8 +4,15 @@ services:
       context: ..
       dockerfile: docker/Dockerfile
     restart: unless-stopped
-    env_file:
-      - stack.env
+    enviroment:
+      - DATABASE_URL=${DATABASE_URL}
+      - PORT=${PORT}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - SQIDS_ALPHABET=${SQIDS_ALPHABET}
+      - UPLOADS_DIR=${UPLOADS_DIR}
+      - IMAGES_DIR=${IMAGES_DIR}
+      - PFPS_DIR=${PFPS_DIR}
+      - BASE_URL=${BASE_URL}
     volumes:
       - /mnt/app_data:/usr/src/app/data
     deploy:
