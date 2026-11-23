@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "bun --watch src/server.ts",
     "start": "bun src/server.ts",
+    "compile": "rm -rf dist && mkdir -p dist && bun build src/server.ts --compile --outfile dist/server && cp node_modules/@img/sharp-libvips-linux-x64/lib/libvips-cpp.so.* dist/",
     "db:seed": "bun run src/db/seed.ts"
   },
   "devDependencies": {
