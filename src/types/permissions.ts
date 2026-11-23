@@ -56,7 +56,6 @@ export const ALL_PERMS = [
     'roles.update.permissions',
     'roles:delete',
     'admin:read.docs',
-    "admin:test",
 ] as const;
 
 export type RegisteredPermission = (typeof ALL_PERMS)[number];
