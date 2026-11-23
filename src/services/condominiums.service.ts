@@ -427,32 +427,15 @@ export const getPendingMembers = async (condominiumId: string) => {
     .where(eq(pendingCondominiumMembers.condominiumId, condominiumId));
 };
 
-export const approveMember = async (condominiumId: string, userId: string) => {
+export const approveMember = async (
+  condominiumId: string,
+  userId: string,
+  unitId?: string,
+) => {
+  if (!unitId) throw new ConflictError("A unit ID must be provided");
   const residentRole = await getRoleByNameService("resident");
 
   await db.transaction(async (tx) => {
-    const [unit] = await tx
-      .select()
-      .from(pendingCondominiumMembers)
-      .where(
-        and(
-          eq(pendingCondominiumMembers.userId, userId),
-          eq(pendingCondominiumMembers.condominiumId, condominiumId),
-        ),
-      );
-
-    if (!unit) throw new NotFoundError("Pending member not found");
-
-    const [condominiumUnit] = await tx
-      .insert(condominiumUnits)
-      .values({
-        condominiumId: condominiumId,
-        name: unit,
-      })
-      .returning();
-
-    if (!condominiumUnit) throw new NotFoundError("Condominium not found");
-
     const [pending] = await tx
       .delete(pendingCondominiumMembers)
       .where(
@@ -467,7 +450,7 @@ export const approveMember = async (condominiumId: string, userId: string) => {
     await tx.insert(condominiumMembers).values({
       userId,
       condominiumId,
-      condominiumUnitId: condominiumUnit.condominiumUnitId,
+      condominiumUnitId: unitId,
     });
     await tx
       .insert(userRoles)
