@@ -1,5 +1,5 @@
 import {type Request, type Response, type NextFunction} from "express";
-import {getCondominiums, getMyCondominiums, getCondominiumById, rejectCondominium, getUnitsByCondominium, createCondominium, updateCondominium, deleteCondominium, approveCondominium, getUnitById, createUnit, updateUnit, deleteUnit, requestJoin, getMembers, getPendingMembers, approveMember, removeMember, rejectMember, setLoanAccess, getCondominiumDocuments} from "@/services/condominiums.service.ts";
+import {getCondominiums, getMyCondominiums, getCondominiumById, rejectCondominium, getUnitsByCondominium, createCondominium, updateCondominium, deleteCondominium, approveCondominium, getUnitById, createUnit, updateUnit, deleteUnit, requestJoin, getMembers, getPendingMembers, getMyMembership, approveMember, removeMember, rejectMember, setLoanAccess, getCondominiumDocuments} from "@/services/condominiums.service.ts";
 import {
     CondominiumIdParams,
     CondominiumUnitParams,
@@ -173,6 +173,15 @@ export const getCondominiumMembers = async (req: AuthorizedRequest, res: Respons
         const {id} = CondominiumIdParams.parse(req.params);
         const members = await getMembers(id);
         return res.status(200).json(members);
+    } catch (error) {
+        next(error);
+    }
+}
+
+export const getCondominiumMemberSelf = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
+    try {
+        const {id} = CondominiumIdParams.parse(req.params);
+        return res.status(200).json(await getMyMembership(id, req.session.userId));
     } catch (error) {
         next(error);
     }

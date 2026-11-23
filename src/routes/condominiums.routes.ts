@@ -21,6 +21,7 @@ import {
   rejectCondominiumMember,
   putMemberLoanAccess,
   getCondominiumDocumentsHandler,
+  getCondominiumMemberSelf,
 } from "@/controllers/condominiums.controller.ts";
 import { authenticationHandler } from "@/middlewares/authentication.middleware.ts";
 import {
@@ -154,6 +155,13 @@ router.get(
   getIdFromParams("id"),
   withPermissions("condominium:read.members"),
   withAuthz(getCondominiumMembers),
+);
+router.get(
+  "/:id/members/me",
+  authenticationHandler,
+  getIdFromParams("id"),
+  withPermissions("condominium:read"),
+  withAuthz(getCondominiumMemberSelf),
 );
 router.get(
   "/:id/members/pending",
