@@ -14,6 +14,7 @@ import {
     postJoinCondominium,
     getCondominiumMembers,
     getCondominiumPendingMembers,
+    getCondominiumMemberSelf,
     approveCondominiumMember,
     removeCondominiumMember,
     getMyCondominiumsHandler,
@@ -61,6 +62,7 @@ router.get('/:id/documents', authenticationHandler, getIdFromParams('id'), withP
 router.post('/:id/reject', authenticationHandler, getIdFromParams('id'), withPermissions('condominium:approve'), withAuthz(rejectCondominiumHandler));
 router.delete('/:id', authenticationHandler, getIdFromParams('id'), withPermissions('condominium:delete') ,withAuthz(removeCondominium));
 router.get('/:id/members', authenticationHandler, getIdFromParams('id'), withPermissions('condominium:read.members'), withAuthz(getCondominiumMembers));
+router.get('/:id/members/me', authenticationHandler, getIdFromParams('id'), withPermissions('condominium:read'), withAuthz(getCondominiumMemberSelf));
 router.get('/:id/members/pending', authenticationHandler, getIdFromParams('id'), withPermissions('condominium:read.members'), withAuthz(getCondominiumPendingMembers));
 router.delete('/:id/members/:userId/pending', authenticationHandler, getIdFromParams('id'), withPermissions('condominium:approve.members'), withAuthz(rejectCondominiumMember));
 router.put('/:id/members/:userId/loan-access', authenticationHandler, getIdFromParams('id'), withPermissions('condominium:update.members'), withAuthz(putMemberLoanAccess));

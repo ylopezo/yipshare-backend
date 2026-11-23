@@ -320,6 +320,21 @@ export const getMembers = async (condominiumId: string) => {
         .where(eq(condominiumMembers.condominiumId, condominiumId));
 }
 
+export const getMyMembership = async (condominiumId: string, userId: string) => {
+    const [member] = await db
+        .select({
+            unitId: condominiumUnits.condominiumUnitId,
+            unitName: condominiumUnits.name,
+        })
+        .from(condominiumMembers)
+        .innerJoin(condominiumUnits, eq(condominiumMembers.condominiumUnitId, condominiumUnits.condominiumUnitId))
+        .where(and(eq(condominiumMembers.userId, userId), eq(condominiumMembers.condominiumId, condominiumId)))
+        .limit(1);
+    if (!member) throw new NotFoundError("Member not found");
+
+    return member;
+}
+
 export const getPendingMembers = async (condominiumId: string) => {
     await getCondominiumById(condominiumId);
     return db

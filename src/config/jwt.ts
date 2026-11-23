@@ -8,8 +8,8 @@ if (!process.env.JWT_SECRET) {
 export const getJwtSecret = async () => {
     return await jose.importJWK(
         {
-            kty: 'oct',
-            k: Buffer.from(env.JWT_SECRET!, 'hex').toString('base64url'),
+            kty: 'oct', //el tipo de la llave JWT
+            k: Buffer.from(env.JWT_SECRET!, 'hex').toString('base64url'), //k es string de la llave en base64url
             alg: 'HS256'
         },
         'HS256'
