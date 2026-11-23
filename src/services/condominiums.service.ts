@@ -121,7 +121,12 @@ export const getCondominiumById = async (id: string) => {
   return processCondominiumForExport(condominium);
 };
 
-const DOCUMENT_TYPES = ["ecrpcDocument", "aanaDocument", "ownerIneDocument", "condominiumRfcDocument"] as const;
+const DOCUMENT_TYPES = [
+  "ecrpcDocument",
+  "aanaDocument",
+  "ownerIneDocument",
+  "condominiumRfcDocument",
+] as const;
 
 const documentId = (url: string) => url.split("/").pop()!;
 
@@ -132,7 +137,9 @@ export const getCondominiumDocuments = async (id: string) => {
     .from(temporaryCondominiumVerificationData)
     .where(eq(temporaryCondominiumVerificationData.condominiumId, id))
     .limit(1);
-  return row ? DOCUMENT_TYPES.map((type) => ({ type, id: documentId(row[type]) })) : [];
+  return row
+    ? DOCUMENT_TYPES.map((type) => ({ type, id: documentId(row[type]) }))
+    : [];
 };
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -146,9 +153,15 @@ const discardDocuments = async (tx: Tx, id: string) => {
 };
 
 const removeDocumentFiles = async (ids: string[]) => {
-  const results = await Promise.allSettled(ids.map((fileId) => deleteFileService(env.UPLOADS_DIR, fileId)));
+  const results = await Promise.allSettled(
+    ids.map((fileId) => deleteFileService(env.UPLOADS_DIR, fileId)),
+  );
   results.forEach((r, i) => {
-    if (r.status === "rejected") console.error(`Could not delete condominium document ${ids[i]}`, r.reason);
+    if (r.status === "rejected")
+      console.error(
+        `Could not delete condominium document ${ids[i]}`,
+        r.reason,
+      );
   });
 };
 
@@ -485,32 +498,15 @@ export const getPendingMembers = async (condominiumId: string) => {
     .where(eq(pendingCondominiumMembers.condominiumId, condominiumId));
 };
 
-export const approveMember = async (condominiumId: string, userId: string) => {
+export const approveMember = async (
+  condominiumId: string,
+  userId: string,
+  unitId?: string,
+) => {
+  if (!unitId) throw new ConflictError("A unit ID must be provided");
   const residentRole = await getRoleByNameService("resident");
 
   await db.transaction(async (tx) => {
-    const [unit] = await tx
-      .select()
-      .from(pendingCondominiumMembers)
-      .where(
-        and(
-          eq(pendingCondominiumMembers.userId, userId),
-          eq(pendingCondominiumMembers.condominiumId, condominiumId),
-        ),
-      );
-
-    if (!unit) throw new NotFoundError("Pending member not found");
-
-    const [condominiumUnit] = await tx
-      .insert(condominiumUnits)
-      .values({
-        condominiumId: condominiumId,
-        name: unit.unit,
-      })
-      .returning();
-
-    if (!condominiumUnit) throw new NotFoundError("Condominium not found");
-
     const [pending] = await tx
       .delete(pendingCondominiumMembers)
       .where(
@@ -525,7 +521,7 @@ export const approveMember = async (condominiumId: string, userId: string) => {
     await tx.insert(condominiumMembers).values({
       userId,
       condominiumId,
-      condominiumUnitId: condominiumUnit.condominiumUnitId,
+      condominiumUnitId: unitId,
     });
     await tx
       .insert(userRoles)
