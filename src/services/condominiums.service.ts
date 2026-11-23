@@ -24,6 +24,8 @@ import {
   UpdateCondominiumRequest,
 } from "@/schema/condominiums.schema.ts";
 import { getRoleByNameService } from "@/services/roles.service.ts";
+import { deleteFileService } from "@/services/uploads.service.ts";
+import { env } from "@/env.ts";
 import type {
   CondominiumExportType,
   CondominiumSelectType,
@@ -119,6 +121,50 @@ export const getCondominiumById = async (id: string) => {
   return processCondominiumForExport(condominium);
 };
 
+const DOCUMENT_TYPES = [
+  "ecrpcDocument",
+  "aanaDocument",
+  "ownerIneDocument",
+  "condominiumRfcDocument",
+] as const;
+
+const documentId = (url: string) => url.split("/").pop()!;
+
+export const getCondominiumDocuments = async (id: string) => {
+  await getCondominiumById(id);
+  const [row] = await db
+    .select()
+    .from(temporaryCondominiumVerificationData)
+    .where(eq(temporaryCondominiumVerificationData.condominiumId, id))
+    .limit(1);
+  return row
+    ? DOCUMENT_TYPES.map((type) => ({ type, id: documentId(row[type]) }))
+    : [];
+};
+
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+const discardDocuments = async (tx: Tx, id: string) => {
+  const [row] = await tx
+    .delete(temporaryCondominiumVerificationData)
+    .where(eq(temporaryCondominiumVerificationData.condominiumId, id))
+    .returning();
+  return row ? DOCUMENT_TYPES.map((type) => documentId(row[type])) : [];
+};
+
+const removeDocumentFiles = async (ids: string[]) => {
+  const results = await Promise.allSettled(
+    ids.map((fileId) => deleteFileService(env.UPLOADS_DIR, fileId)),
+  );
+  results.forEach((r, i) => {
+    if (r.status === "rejected")
+      console.error(
+        `Could not delete condominium document ${ids[i]}`,
+        r.reason,
+      );
+  });
+};
+
 export const getUnitsByCondominium = async (id: string) => {
   await getCondominiumById(id);
   return await db
@@ -212,7 +258,10 @@ export const approveCondominium = async (id: string, userId: string) => {
   if (existing.digitalState !== "pending")
     throw new ConflictError("Condominium is not pending");
 
-  return db.transaction(async (tx) => {
+  let documents: string[] = [];
+  const approved = await db.transaction(async (tx) => {
+    documents = await discardDocuments(tx, id);
+
     const [condominium] = await tx
       .update(condominiums)
       .set({
@@ -236,6 +285,9 @@ export const approveCondominium = async (id: string, userId: string) => {
 
     return condominium;
   });
+
+  await removeDocumentFiles(documents);
+  return approved;
 };
 
 export const rejectCondominium = async (id: string) => {
@@ -243,7 +295,9 @@ export const rejectCondominium = async (id: string) => {
   if (existing.digitalState !== "pending")
     throw new ConflictError("Condominium is not pending");
 
+  let documents: string[] = [];
   await db.transaction(async (tx) => {
+    documents = await discardDocuments(tx, id);
     await tx
       .update(condominiums)
       .set({ digitalState: "deleted" })
@@ -256,6 +310,8 @@ export const rejectCondominium = async (id: string) => {
       action: { type: "condominium_rejected", condominiumId: id },
     });
   });
+
+  await removeDocumentFiles(documents);
 };
 
 export const getUnitById = async (condominiumId: string, unitId: string) => {

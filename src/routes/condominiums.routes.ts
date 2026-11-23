@@ -20,6 +20,7 @@ import {
   rejectCondominiumHandler,
   rejectCondominiumMember,
   putMemberLoanAccess,
+  getCondominiumDocumentsHandler,
 } from "@/controllers/condominiums.controller.ts";
 import { authenticationHandler } from "@/middlewares/authentication.middleware.ts";
 import {
@@ -125,6 +126,13 @@ router.post(
   getIdFromParams("id"),
   withPermissions("condominium:approve"),
   withAuthz(approveCondominiumHandler),
+);
+router.get(
+  "/:id/documents",
+  authenticationHandler,
+  getIdFromParams("id"),
+  withPermissions("admin:read.docs"),
+  withAuthz(getCondominiumDocumentsHandler),
 );
 router.post(
   "/:id/reject",

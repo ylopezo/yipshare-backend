@@ -1,6 +1,6 @@
 import path = require("node:path");
 import fs from "node:fs";
-import { fileTypeFromFile } from "file-type";
+import { fileTypeFromBuffer, fileTypeFromFile } from "file-type";
 import sharp from "sharp";
 import { readFile } from "node:fs/promises";
 
@@ -26,9 +26,9 @@ export async function validImage(file: Express.Multer.File): Promise<boolean> {
 }
 
 export async function validPFP(file: Express.Multer.File): Promise<boolean> {
-  if (!file.mimetype.startsWith("image/")) return false;
+  if (!file.mimetype.startsWith("image/") || !file.buffer?.length) return false;
 
-  const internal_type = await fileTypeFromFile(file.path);
+  const internal_type = await fileTypeFromBuffer(file.buffer);
   if (!internal_type || !internal_type.mime.startsWith("image/")) return false;
 
   return isValidAndDecodableImage(file.buffer);
