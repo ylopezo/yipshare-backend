@@ -21,9 +21,9 @@ services:
         limits:
           memory: 8G
           networks:
-                - default
-                - proxy_net
-networks:
-  proxy_net:
-    name: app-stack_web_network
-    external: true
+            - default
+            - proxy_net
+  networks:
+    proxy_net:
+      name: app-stack_web_network
+      external: true
