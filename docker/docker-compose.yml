@@ -15,7 +15,7 @@ services:
       - PFPS_DIR=${PFPS_DIR}
       - BASE_URL=${BASE_URL}
     volumes:
-      - /mnt/app_data:/usr/src/app/data
+      - /mnt/yipshare_data:/usr/src/app/data
     deploy:
       resources:
         limits:
