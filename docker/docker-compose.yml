@@ -1,0 +1,12 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "4600:3000"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
