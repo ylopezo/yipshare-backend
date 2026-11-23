@@ -6,6 +6,7 @@ services:
     restart: unless-stopped
     environment:
       - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
       - PORT=${PORT}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
       - SQIDS_ALPHABET=${SQIDS_ALPHABET}
