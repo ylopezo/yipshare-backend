@@ -4,6 +4,8 @@ services:
       context: ..
       dockerfile: docker/Dockerfile
     restart: unless-stopped
+    env_file:
+      - stack.env
     volumes:
       - /mnt/app_data:/usr/src/app/data
     deploy:
