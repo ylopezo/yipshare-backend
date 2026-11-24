@@ -30,10 +30,7 @@ export const postArticle = async (req: AuthorizedRequest<{ fileHandles: ArticleI
 
 export const patchArticle = async (req: AuthorizedRequest<{fileHandles: ArticleUpdateImgHandles}>, res: Response, next: NextFunction) => {
     try {
-        const {
-            image: [image],
-        } = req.fileHandles;
-        const imageUrl = image ? image.url : undefined;
+        const imageUrl = req.fileHandles.image?.[0]?.url;
         const {id, articleId} = ArticleParams.parse(req.params);
         const data = ArticleRequest.parse(req.body);
         return res.status(200).json(await updateArticle(req.session.userId, id, articleId, data, imageUrl));

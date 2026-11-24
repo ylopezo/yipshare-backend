@@ -23,7 +23,7 @@ const articleUpdateImgSchema = {
 
 export const uploadUpdateArticleImg = imageMulter.schema(articleUpdateImgSchema);
 
-export type ArticleUpdateImgHandles = FileHandlesFromSchema<typeof articleImgSchema, DiskFileHandle>;
+export type ArticleUpdateImgHandles = FileHandlesFromSchema<typeof articleUpdateImgSchema, DiskFileHandle>;
 
 router.get('/:id/articles', authenticationHandler, getIdFromParams('id'), withPermissions('condominium:read.articles.all'), withAuthz(getArticles));
 router.post('/:id/articles', authenticationHandler, getIdFromParams('id'), uploadArticleImg, withPermissions('condominium:create.articles'), withAuthz<{fileHandles: ArticleImgHandles}>(postArticle));

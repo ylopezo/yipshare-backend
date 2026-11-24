@@ -26,6 +26,8 @@ export const ALL_PERMS = [
     'users:read.notifications',
     'users:read.loans.all',
     'users:read.loans',
+    'loans:read',
+    'loans:read.all',
     'users:create',
     'users:create.loans',
     'users:update',

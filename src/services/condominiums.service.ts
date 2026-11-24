@@ -292,7 +292,7 @@ export const approveCondominium = async (id: string, userId: string) => {
   });
 
   await removeDocumentFiles(documents);
-  return approved;
+  return processCondominiumForExport(approved!);
 };
 
 export const rejectCondominium = async (id: string) => {
@@ -686,11 +686,11 @@ export const removeMember = async (
 const processCondominiumForExport = async (
   condominium: CondominiumSelectType,
 ) => {
-  const textCode = encodeInvCode(condominium.shortCode);
+  const { shortCode, ...rest } = condominium;
 
   const exportSafeData: CondominiumExportType = {
-    ...condominium,
-    code: textCode,
+    ...rest,
+    code: encodeInvCode(shortCode),
   };
 
   return exportSafeData;

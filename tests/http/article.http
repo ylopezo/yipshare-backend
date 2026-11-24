@@ -132,7 +132,7 @@ POST localhost:4600/condominiums/{{condominiumId}}/approve
 Authorization: Bearer {{super_token}}
 
 > {%
-    client.global.set("code", response.body.shortCode);
+    client.global.set("code", response.body.code);
 %}
 
 ### Admin crea una unidad -> 201

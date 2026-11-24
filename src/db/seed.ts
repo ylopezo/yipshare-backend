@@ -127,6 +127,7 @@ async function seed() {
     "users:read.self",
     "users:read.profile",
     "users:update.self",
+    "users:update.self.pfp",
     "users:delete.self",
     "users:read.notifications",
     "users:update.notifications.markRead",
