@@ -63,9 +63,9 @@ export async function authenticationHandler(req: Request, res: Response, next: N
         }
 
 
+
         const hash = createHash('sha256').update(payload.sessionToken).digest('hex');
         const [sessionObject] = await db.select().from(sessions).where(eq(sessions.tokenHash, hash)).limit(1);
-
         if (!sessionObject) {
             throw new UnauthorizedError()
         }

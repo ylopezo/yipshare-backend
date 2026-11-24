@@ -14,7 +14,7 @@ const CondominiumAddressRequest = z.object({
 });
 
 export const CreateCondominiumRequest = CondominiumAddressRequest.extend({
-    units: z.int().min(1).max(500).optional(),
+    units: z.coerce.number().int().min(1).max(500).optional(),
 });
 
 export const UpdateCondominiumRequest = CondominiumAddressRequest.partial()

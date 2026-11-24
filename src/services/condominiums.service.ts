@@ -165,10 +165,15 @@ const removeDocumentFiles = async (ids: string[]) => {
   });
 };
 
+const unitFields = {
+  condominiumUnitId: condominiumUnits.condominiumUnitId,
+  name: condominiumUnits.name,
+};
+
 export const getUnitsByCondominium = async (id: string) => {
   await getCondominiumById(id);
   return await db
-    .select()
+    .select(unitFields)
     .from(condominiumUnits)
     .where(eq(condominiumUnits.condominiumId, id));
 };
@@ -317,7 +322,7 @@ export const rejectCondominium = async (id: string) => {
 export const getUnitById = async (condominiumId: string, unitId: string) => {
   await getCondominiumById(condominiumId);
   const [unit] = await db
-    .select()
+    .select(unitFields)
     .from(condominiumUnits)
     .where(
       and(
@@ -343,7 +348,7 @@ export const createUnit = async (
   const [unit] = await db
     .insert(condominiumUnits)
     .values({ ...data, condominiumId })
-    .returning();
+    .returning(unitFields);
 
   return unit;
 };
@@ -359,7 +364,7 @@ export const updateUnit = async (
     .update(condominiumUnits)
     .set(data)
     .where(eq(condominiumUnits.condominiumUnitId, unitId))
-    .returning();
+    .returning(unitFields);
 
   return unit;
 };
@@ -503,7 +508,7 @@ export const approveMember = async (
   userId: string,
   unitId?: string,
 ) => {
-  if (!unitId) throw new ConflictError("A unit ID must be provided");
+  if (unitId) await getUnitById(condominiumId, unitId);
   const residentRole = await getRoleByNameService("resident");
 
   await db.transaction(async (tx) => {
@@ -518,10 +523,15 @@ export const approveMember = async (
       .returning();
     if (!pending) throw new NotFoundError("Join request not found");
 
+    // Without an explicit unit, use the one matched from the requested unit name at join time
+    const condominiumUnitId = unitId ?? pending.suggestedUnitId;
+    if (!condominiumUnitId)
+      throw new ConflictError(`No unit matches "${pending.unit}"; a unit ID must be provided`);
+
     await tx.insert(condominiumMembers).values({
       userId,
       condominiumId,
-      condominiumUnitId: unitId,
+      condominiumUnitId,
     });
     await tx
       .insert(userRoles)

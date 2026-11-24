@@ -200,7 +200,8 @@ export const getCondominiumPendingMembers = async (req: AuthorizedRequest, res: 
 export const approveCondominiumMember = async (req: AuthorizedRequest, res: Response, next: NextFunction) => {
     try {
         const {id, userId} = MemberParams.parse(req.params);
-        await approveMember(id, userId);
+        const {unitId} = ApproveMemberRequest.parse(req.body ?? {});
+        await approveMember(id, userId, unitId);
         return res.status(204).end();
     } catch (error) {
         next(error);
