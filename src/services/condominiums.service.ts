@@ -523,7 +523,6 @@ export const approveMember = async (
       .returning();
     if (!pending) throw new NotFoundError("Join request not found");
 
-    // Without an explicit unit, use the one matched from the requested unit name at join time
     const condominiumUnitId = unitId ?? pending.suggestedUnitId;
     if (!condominiumUnitId)
       throw new ConflictError(`No unit matches "${pending.unit}"; a unit ID must be provided`);
