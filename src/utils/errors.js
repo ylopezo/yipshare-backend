@@ -48,3 +48,9 @@ export class UnsupportedMediaTypeError extends AppError {
         super(message, 415);
     }
 }
+
+export class TooManyRequestsError extends AppError {
+    constructor(message = "TooManyRequests") {
+        super(message, 429);
+    }
+}

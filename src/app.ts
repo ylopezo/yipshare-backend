@@ -14,6 +14,8 @@ import uploadsRoutes from "@/routes/files.routes.ts";
 
 export const app = express();
 
+app.set("trust proxy", 1);
+
 app.use((req, res, next) => {
   if (req.method === "GET" || req.method === "QUERY") {
     res.set({
