@@ -53,6 +53,7 @@ export const getCondominiumReports = async (condominiumId: string) => db
         reported: reported.username,
         text: reports.reportText,
         state: reports.state,
+        images: sql<string[]>`coalesce((select array_agg(${reportEvidences.image}) from ${reportEvidences} where ${reportEvidences.reportId} = ${reports.reportId}), '{}')`,
     })
     .from(reports)
     .innerJoin(loans, eq(loans.loanId, reports.loanId))

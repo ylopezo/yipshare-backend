@@ -1,5 +1,5 @@
 import {db} from "@/db/db.ts";
-import {articleCategories, articles, categories, condominiumMembers, roles, userRoles, users} from "@/db/schema.ts";
+import {articleCategories, articles, categories, loans, notifications, condominiumMembers, roles, userRoles, users} from "@/db/schema.ts";
 import {and, desc, eq, ilike, isNull, sql} from "drizzle-orm";
 import {ConflictError, ForbiddenError, NotFoundError} from "@/utils/errors";
 import * as z from "zod";
@@ -102,12 +102,23 @@ export const  deleteArticle = async (userId: string, condominiumId: string, arti
         throw new NotFoundError("Article not found");
     }
 
-    const [deleted] = await db.update(articles).set({deletedAt: new Date()})
-        .where(and(
-            eq(articles.articleId, articleId),
-            isNull(articles.deletedAt),
-            stored.lendingUser === userId ? eq(articles.availability, 'available') : undefined,
-        ))
-        .returning({id: articles.articleId});
-    if (!deleted) throw new ConflictError("Article is on loan");
+    await db.transaction(async (tx) => {
+        const [deleted] = await tx.update(articles).set({deletedAt: new Date()})
+            .where(and(
+                eq(articles.articleId, articleId),
+                isNull(articles.deletedAt),
+                stored.lendingUser === userId ? eq(articles.availability, 'available') : undefined,
+            ))
+            .returning({id: articles.articleId});
+        if (!deleted) throw new ConflictError("Article is on loan");
+        const dropped = await tx.update(loans).set({state: 'rejected'})
+            .where(and(eq(loans.articleId, articleId), eq(loans.state, 'pending')))
+            .returning({loanId: loans.loanId, userId: loans.userId});
+        if (dropped.length) await tx.insert(notifications).values(dropped.map((l) => ({
+            userId: l.userId,
+            header: 'Solicitud cancelada',
+            body: `El artículo «${stored.name}» fue eliminado, así que tu solicitud se canceló.`,
+            action: {type: 'loan_rejected', loanId: l.loanId, condominiumId},
+        })));
+    });
 };

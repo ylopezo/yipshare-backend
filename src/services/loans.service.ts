@@ -3,7 +3,7 @@ import {z} from "zod";
 import type {LoanRequest} from "@/schema/loans.schema.ts";
 import {articles, condominiumMembers, loans, notifications, userRoles, users} from "@/db/schema.ts";
 import {ConflictError, ForbiddenError, NotFoundError} from "@/utils/errors";
-import {and, desc, eq, gt, isNull, or, sql} from "drizzle-orm";
+import {and, desc, eq, gt, isNull, ne, or, sql} from "drizzle-orm";
 import {alias} from "drizzle-orm/pg-core";
 import {generateVerificationCodeUtil, normalizeCode} from "@/utils/verificaton_code.util.ts";
 import {canRequestLoans} from "@/services/condominiums.service.ts";
@@ -89,6 +89,7 @@ export const getMyLoansService = async (userId: string, condominiumId?: string) 
     return selectMyLoans(userId)
         .where(and(
             or(eq(loans.lenderId, userId), eq(loans.userId, userId)),
+            notDroppedRequest,
             condominiumId ? eq(articles.condominiumId, condominiumId) : undefined,
         ))
         .orderBy(desc(loans.loanId));
@@ -103,6 +104,8 @@ export const getMyLentLoansService = async (userId: string, condominiumId?: stri
         ))
         .orderBy(desc(loans.loanId));
 };
+
+const notDroppedRequest = or(isNull(articles.deletedAt), ne(loans.state, 'rejected'));
 
 const lender = alias(users, 'lender');
 const borrower = alias(users, 'borrower');
@@ -120,7 +123,7 @@ export const getAllLoansFromCondominium = async (condominiumId: string) => {
         .innerJoin(articles, eq(loans.articleId, articles.articleId))
         .innerJoin(lender, eq(lender.userId, loans.lenderId))
         .innerJoin(borrower, eq(borrower.userId, loans.userId))
-        .where(eq(articles.condominiumId, condominiumId))
+        .where(and(eq(articles.condominiumId, condominiumId), notDroppedRequest))
         .orderBy(desc(loans.loanId));
 };
 
