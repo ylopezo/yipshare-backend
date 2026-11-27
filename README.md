@@ -1,6 +1,10 @@
-# YipShare (backend)
-
 API REST de YipShare: condominios, vecinos, artículos, préstamos, reportes y reseñas.
+=======
+### Integrantes del Equipo
+- Amaro López Jonathan Israel
+- Fuentes Moreno Luis Antonio
+- García Delgado Jesús Xavier
+- López Ortega Yehoshua Leopoldo
 
 ## Tecnologías
 Bun, Express 5, PostgreSQL con Drizzle ORM, zod para validar, JWT (jose) y argon2 para contraseñas.
