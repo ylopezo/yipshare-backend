@@ -1,5 +1,11 @@
 # yipshare-backend
 
+### Integrantes del Equipo
+Amaro López Jonathan Israel
+Fuentes Moreno Luis Antonio
+García Delgado Jesús Xavier
+López Ortega Yehoshua Leopoldo
+
 To install dependencies:
 
 ```bash
